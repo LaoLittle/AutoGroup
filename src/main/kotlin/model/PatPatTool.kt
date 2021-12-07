@@ -5,7 +5,6 @@ import net.mamoe.mirai.console.command.descriptor.ExperimentalCommandDescriptors
 import net.mamoe.mirai.console.util.ConsoleExperimentalApi
 import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.utils.MiraiExperimentalApi
-import net.mamoe.mirai.utils.MiraiInternalApi
 import org.laolittle.plugin.joinorquit.AutoGroup
 import org.laolittle.plugin.joinorquit.AutoGroup.dataFolder
 import org.laolittle.plugin.joinorquit.util.GifEncoder
@@ -24,27 +23,25 @@ import java.net.URL
 import javax.imageio.ImageIO
 
 @MiraiExperimentalApi
-@ExperimentalSerializationApi
-@MiraiInternalApi
 @ExperimentalCommandDescriptors
 @ConsoleExperimentalApi
-fun getPat(hippopotomonstrosesquippedaliophobia: Contact, delay: Int){
+@ExperimentalSerializationApi
+fun getPat(hippopotomonstrosesquippedaliophobia: Contact, delay: Int) {
     val qqId = hippopotomonstrosesquippedaliophobia.id
     // hippopotomonstrosesquippedaliophobia: 长单词恐惧症
     val tmp = File("$dataFolder/tmp")
-    if(!tmp.exists()) tmp.mkdir()
-    if(tmp.resolve("${qqId}_pat.gif").exists()) return
+    if (!tmp.exists()) tmp.mkdir()
+    if (tmp.resolve("${qqId}_pat.gif").exists()) return
     val avatar = URL(hippopotomonstrosesquippedaliophobia.avatarUrl).openStream()
     mkImg(avatar, tmp.resolve("${qqId}_pat.gif"), delay)
 }
 
-@MiraiExperimentalApi
-@ExperimentalSerializationApi
-@MiraiInternalApi
 @ExperimentalCommandDescriptors
+@MiraiExperimentalApi
 @ConsoleExperimentalApi
+@ExperimentalSerializationApi
 @Throws(IOException::class)
-private fun mkImg(avatar: InputStream, savePath: File, delay: Int){
+private fun mkImg(avatar: InputStream, savePath: File, delay: Int) {
     val targetSize = 112
     val cornerRadius = 112
     val avatarImage = ImageIO.read(avatar)
@@ -73,10 +70,9 @@ private fun mkImg(avatar: InputStream, savePath: File, delay: Int){
 
 //w: 宽 h: 高 x,y: 头像位置 hy:手的y轴偏移
 @MiraiExperimentalApi
-@ExperimentalSerializationApi
-@MiraiInternalApi
 @ExperimentalCommandDescriptors
 @ConsoleExperimentalApi
+@ExperimentalSerializationApi
 private fun processImage(
     image: BufferedImage,
     i: Int,
