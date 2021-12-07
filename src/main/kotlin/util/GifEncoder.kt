@@ -88,6 +88,7 @@ class GifEncoder private constructor(outputStream: ImageOutputStream, imageType:
                 throw RuntimeException("GIF编码出错", e)
             }
         }
+
         /*
                 private fun convert(
                     imagePaths: Array<String>,
@@ -140,7 +141,7 @@ class GifEncoder private constructor(outputStream: ImageOutputStream, imageType:
          *
          * */
 
-        fun convert(images: Array<BufferedImage>, gifPath: String, delay: Int, loop: Boolean){
+        fun convert(images: Array<BufferedImage>, gifPath: String, delay: Int, loop: Boolean) {
             convert(images, gifPath, delay, loop, null, null)
         }
     }
