@@ -1,3 +1,5 @@
+@file:Suppress("SameParameterValue")
+
 package org.laolittle.plugin.joinorquit.model
 
 import kotlinx.serialization.ExperimentalSerializationApi
