@@ -13,22 +13,36 @@ import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.console.util.ConsoleExperimentalApi
 import net.mamoe.mirai.contact.Contact.Companion.sendImage
-import net.mamoe.mirai.contact.User
 import net.mamoe.mirai.contact.isAdministrator
 import net.mamoe.mirai.contact.isOperator
 import net.mamoe.mirai.contact.isOwner
+import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.GlobalEventChannel
 import net.mamoe.mirai.event.events.*
 import net.mamoe.mirai.event.subscribeGroupMessages
-import net.mamoe.mirai.message.data.*
+import net.mamoe.mirai.message.code.MiraiCode.deserializeMiraiCode
+import net.mamoe.mirai.message.data.At
+import net.mamoe.mirai.message.data.PlainText
+import net.mamoe.mirai.message.data.PokeMessage
+import net.mamoe.mirai.message.data.buildForwardMessage
 import net.mamoe.mirai.utils.MiraiExperimentalApi
 import net.mamoe.mirai.utils.info
+import org.laolittle.plugin.joinorquit.AutoConfig.botMutedMessage
+import org.laolittle.plugin.joinorquit.AutoConfig.botOperatedMuteMessage
+import org.laolittle.plugin.joinorquit.AutoConfig.botOperatedUnmuteMessage
+import org.laolittle.plugin.joinorquit.AutoConfig.botUnmuteMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.counterNudge
-import org.laolittle.plugin.joinorquit.AutoConfig.mutedMessage
+import org.laolittle.plugin.joinorquit.AutoConfig.counterNudgeMessage
+import org.laolittle.plugin.joinorquit.AutoConfig.groupMuteAllRelease
+import org.laolittle.plugin.joinorquit.AutoConfig.kickMessage
+import org.laolittle.plugin.joinorquit.AutoConfig.memberMutedMessage
+import org.laolittle.plugin.joinorquit.AutoConfig.memberUnmuteMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.nudgeMin
 import org.laolittle.plugin.joinorquit.AutoConfig.nudgedReply
+import org.laolittle.plugin.joinorquit.AutoConfig.quitMessage
 import org.laolittle.plugin.joinorquit.model.CacheClear
 import org.laolittle.plugin.joinorquit.model.getPat
+import org.laolittle.plugin.joinorquit.util.encodeToMiraiCode
 import java.io.File
 import java.time.LocalDateTime
 import java.util.*
@@ -40,7 +54,7 @@ import java.util.*
 object AutoGroup : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.AutoGroup",
-        version = "1.1",
+        version = "1.1.1",
         name = "AutoGroup"
     ) {
         author("LaoLittle")
@@ -48,12 +62,28 @@ object AutoGroup : KotlinPlugin(
     }
 ) {
     override fun onEnable() {
+        val osName = System.getProperties().getProperty("os.name")
+        if (osName.indexOf("Windows") < 0) System.setProperty("java.awt.headless", "true")
         AutoConfig.reload()
         var lastMessage: Map<Long, String> = mutableMapOf()
         var onEnable: Map<Long, Boolean> = mutableMapOf()
         val nudgePerm = AutoGroup.registerPermission("timer.nudge", "每隔${nudgeMin}分钟戳一戳")
 
         logger.info { "开始折磨群友" }
+
+        /*
+         GlobalEventChannel.subscribeGroupMessages {
+                 startsWith("测") {
+                     val a = TFIDFAnalyzer().analyze(it, 100)
+                     for (i in a) {
+                         subject.sendMessage(i.name)
+                         delay(300)
+                     }
+                 }
+             }
+
+         */
+
         GlobalEventChannel.subscribeOnce<BotOnlineEvent> {
             class NudgeTimer : TimerTask() {
                 override fun run() {
@@ -76,7 +106,12 @@ object AutoGroup : KotlinPlugin(
         }
 
         GlobalEventChannel.subscribeAlways<GroupTalkativeChangeEvent> {
-            group.sendMessage(At(previous) + PlainText(" 的龙王被") + At(now) + PlainText(" 抢走了，好可怜"))
+            if (previous.id == bot.id) {
+                group.sendMessage("我的龙王被抢走了...")
+                delay(2000)
+                group.sendMessage(PlainText("呜呜呜...").plus(At(now)).plus(PlainText(" 你还我龙王！！！")))
+                now.sendMessage("还给我还给我还给我还给我还给我")
+            } else group.sendMessage(At(previous) + PlainText(" 的龙王被") + At(now) + PlainText(" 抢走了，好可怜"))
         }
 
         GlobalEventChannel.subscribeAlways<MemberJoinEvent> {
@@ -86,38 +121,40 @@ object AutoGroup : KotlinPlugin(
         }
 
         GlobalEventChannel.subscribeAlways<MemberLeaveEvent.Kick> {
-            group.sendMessage("有个人被$operator 踢了！！好可怕")
+            val msg = kickMessage.encodeToMiraiCode(operatorOrBot, member).deserializeMiraiCode()
+            group.sendMessage(msg)
         }
 
         GlobalEventChannel.subscribeAlways<MemberLeaveEvent.Quit> {
-            group.sendMessage("有个人悄悄退群了...")
+            val msg = quitMessage.encodeToMiraiCode(member, true).deserializeMiraiCode()
+            group.sendMessage(msg)
         }
 
         GlobalEventChannel.subscribeAlways<MemberMuteEvent> {
-            group.sendMessage(buildMessageChain {
-                add(At(member))
-                add(PlainText(" 被"))
-                add(At(operator as User))
-                add(PlainText(" 禁言了，好可惜"))
-            })
+            val msg = if (operatorOrBot == group.botAsMember) botOperatedMuteMessage
+                .replace("%主动%", operatorOrBot.nameCardOrNick)
+                .encodeToMiraiCode(member, false)
+                .deserializeMiraiCode()
+            else memberMutedMessage
+                .encodeToMiraiCode(operatorOrBot, member)
+                .deserializeMiraiCode()
+            group.sendMessage(msg)
         }
 
         GlobalEventChannel.subscribeAlways<MemberUnmuteEvent> {
-            group.sendMessage(buildMessageChain {
-                add(At(member))
-                add(" 你自由啦！还不快感谢")
-                if (operatorOrBot == group.botAsMember)
-                    add("我")
-                else {
-                    add(At(operatorOrBot))
-                    add(" 大人")
-                }
-            })
+            val msg = if (operatorOrBot == group.botAsMember) botOperatedUnmuteMessage
+                .replace("%主动%", operatorOrBot.nameCardOrNick)
+                .encodeToMiraiCode(member, false)
+                .deserializeMiraiCode()
+            else memberUnmuteMessage
+                .encodeToMiraiCode(operatorOrBot, member)
+                .deserializeMiraiCode()
+            group.sendMessage(msg)
         }
 
         GlobalEventChannel.subscribeAlways<BotMuteEvent> {
             try {
-                for (msg in mutedMessage) {
+                for (msg in botMutedMessage) {
                     operator.sendMessage(msg)
                     delay(1000)
                 }
@@ -128,26 +165,24 @@ object AutoGroup : KotlinPlugin(
 
         GlobalEventChannel.subscribeAlways<BotUnmuteEvent> {
             delay(1000)
-            group.sendMessage(buildMessageChain {
-                add("我自由啦！感谢")
-                add(At(operator))
-                add(" 大人 🥵🥵🥵🥵🥵🥵🥵🥵")
-            })
+            val msg = botUnmuteMessage.encodeToMiraiCode(operator, true).deserializeMiraiCode()
+            group.sendMessage(msg)
         }
 
         GlobalEventChannel.subscribeGroupMessages {
+            /*
             "justtest" {
                 for (i in nudgedReply)
                     subject.sendMessage(i)
             }
+            */
             startsWith("allinall") {
-                val replaced = it.replace("allinall", "")
-                if (replaced == "") return@startsWith
                 val msg = buildForwardMessage {
                     val randomMember = subject.members.random()
-                    add(randomMember, PlainText(replaced))
+                    add(randomMember, PlainText(it))
                 }
-                subject.sendMessage(msg)
+                if (it != "")
+                    subject.sendMessage(msg)
             }
         }
 
@@ -157,7 +192,8 @@ object AutoGroup : KotlinPlugin(
 
         GlobalEventChannel.subscribeAlways<GroupMuteAllEvent> {
             if (!new) {
-                group.sendMessage("嗯？好像能说话了耶")
+                val msg = groupMuteAllRelease.encodeToMiraiCode(operatorOrBot, true).deserializeMiraiCode()
+                group.sendMessage(msg)
             }
         }
 
@@ -174,7 +210,8 @@ object AutoGroup : KotlinPlugin(
             if (target == bot) {
                 val msg = when ((1..100).random()) {
                     in 1..counterNudge -> {
-                        subject.sendMessage("戳回去(￣ ‘i ￣;)")
+                        if (counterNudgeMessage == "") return@subscribeAlways
+                        subject.sendMessage(counterNudgeMessage)
                         delay(1000)
                         try {
                             if (!from.nudge().sendTo(subject)) {
@@ -183,7 +220,7 @@ object AutoGroup : KotlinPlugin(
                                 subject.sendMessage(PokeMessage.ChuoYiChuo)
                             }
                         } catch (e: UnsupportedOperationException) {
-                            logger.info { "协议为不支持的协议，改用Poke戳一戳" }
+                            logger.info { "当前使用协议为不支持的协议，改用Poke戳一戳" }
                             subject.sendMessage(PokeMessage.ChuoYiChuo)
                         }
                         "哼"
