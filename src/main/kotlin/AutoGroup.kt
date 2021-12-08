@@ -23,7 +23,11 @@ import net.mamoe.mirai.event.subscribeGroupMessages
 import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.utils.MiraiExperimentalApi
 import net.mamoe.mirai.utils.info
+import org.laolittle.plugin.joinorquit.AutoConfig.counterNudge
+import org.laolittle.plugin.joinorquit.AutoConfig.mutedMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.nudgeMin
+import org.laolittle.plugin.joinorquit.AutoConfig.nudgedReply
+import org.laolittle.plugin.joinorquit.model.CacheClear
 import org.laolittle.plugin.joinorquit.model.getPat
 import java.io.File
 import java.time.LocalDateTime
@@ -36,7 +40,7 @@ import java.util.*
 object AutoGroup : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.AutoGroup",
-        version = "1.0",
+        version = "1.1",
         name = "AutoGroup"
     ) {
         author("LaoLittle")
@@ -53,8 +57,8 @@ object AutoGroup : KotlinPlugin(
         GlobalEventChannel.subscribeOnce<BotOnlineEvent> {
             class NudgeTimer : TimerTask() {
                 override fun run() {
-                    logger.info { "开戳" }
                     this@AutoGroup.launch {
+                        logger.info { "开戳" }
                         bot.groups.filter {
                             val nowHour = LocalDateTime.now().hour
                             nowHour !in 0..8 && nowHour !in 22..23
@@ -113,9 +117,10 @@ object AutoGroup : KotlinPlugin(
 
         GlobalEventChannel.subscribeAlways<BotMuteEvent> {
             try {
-                operator.sendMessage("就是你禁言的我吧")
-                delay(1000)
-                operator.sendMessage("咕姆姆，我记住你了")
+                for (msg in mutedMessage) {
+                    operator.sendMessage(msg)
+                    delay(1000)
+                }
             } catch (e: Exception) {
                 logger.error("$e 好像没法发送临时消息...")
             }
@@ -131,6 +136,10 @@ object AutoGroup : KotlinPlugin(
         }
 
         GlobalEventChannel.subscribeGroupMessages {
+            "justtest" {
+                for (i in nudgedReply)
+                    subject.sendMessage(i)
+            }
             startsWith("allinall") {
                 val replaced = it.replace("allinall", "")
                 if (replaced == "") return@startsWith
@@ -163,13 +172,8 @@ object AutoGroup : KotlinPlugin(
 
         GlobalEventChannel.subscribeAlways<NudgeEvent> {
             if (target == bot) {
-                val msg = when ((0..5).random()) {
-                    0 -> "请不要戳亚托莉~>_<~"
-                    1 -> "别戳啦"
-                    2 -> "再戳我你就是笨批<( ￣^￣)"
-                    3 -> "ヾ(≧へ≦)〃"
-                    4 -> "亚托莉是高性能机器人...呜呜"
-                    else -> {
+                val msg = when ((1..100).random()) {
+                    in 1..counterNudge -> {
                         subject.sendMessage("戳回去(￣ ‘i ￣;)")
                         delay(1000)
                         try {
@@ -184,6 +188,7 @@ object AutoGroup : KotlinPlugin(
                         }
                         "哼"
                     }
+                    else -> nudgedReply.random()
                 }
                 delay(1000)
                 subject.sendMessage(msg)
@@ -204,21 +209,12 @@ object AutoGroup : KotlinPlugin(
             lastMessage = lastMessage.plus(group.id to message.serializeToMiraiCode())
         }
 
-        Timer().schedule(CacheClear(), Date(), 60 * 30 * 1000)
+        val cacheClear = CacheClear()
+        Timer().schedule(cacheClear, Date(), 60 * 30 * 1000)
     }
 
     override fun onDisable() {
         logger.info { "让他们休息会" }
-    }
-
-    class CacheClear : TimerTask() {
-        override fun run() {
-            val tmp = File("${AutoGroup.dataFolder}/tmp")
-            when (if (tmp.exists()) tmp.deleteRecursively() else null) {
-                true -> AutoGroup.logger.info { "缓存清理完成" }
-                false -> AutoGroup.logger.info { "缓存清理失败" }
-            }
-        }
     }
 
     private fun AbstractJvmPlugin.registerPermission(name: String, description: String): Permission {
