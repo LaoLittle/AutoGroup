@@ -179,6 +179,7 @@ public class JiebaSegmenter {
     /*
      * 
      */
+    @SuppressWarnings("SuspiciousNameCombination")
     public List<String> sentenceProcess(String sentence) {
         List<String> tokens = new ArrayList<>();
         int N = sentence.length();
