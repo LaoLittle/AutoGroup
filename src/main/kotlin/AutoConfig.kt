@@ -101,6 +101,9 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
 
     @ValueDescription("淫语翻译触发关键词")
     val yinglishCommand: String by value("翻译")
+
+    @ValueDescription("淫乱度 (%)")
+    var yingLevel: Int by value(50)
 /*
     @ValueDescription("是否在禁言期间持续发送消息给操作人以及发送的消息")
     val keepSendMessageWhenMuted: Boolean by value(false)

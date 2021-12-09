@@ -1,6 +1,7 @@
 package org.laolittle.plugin.joinorquit.util
 
 import net.mamoe.mirai.contact.User
+import org.laolittle.plugin.joinorquit.AutoConfig.yingLevel
 
 object Tools {
 
@@ -16,21 +17,21 @@ object Tools {
         else this.replace("%被动%", "[mirai:at:${user.id}]")
     }
 
-    fun getYinglish(chars: CharArray, yingLev: Int, part: String?): String {
-        val randomOneTen = { (1..10).random() }
-        var O = ""
-        if (randomOneTen() > yingLev)
+    fun getYinglish(chars: CharArray, part: String?): String {
+        val randomOneTen = { (1..100).random() }
+        var pon = ""
+        if (randomOneTen() > yingLevel)
             return String(chars)
         if (chars[0] == '！' || chars[0] == '!')
             return "❤"
         if (chars[0] == '。' || chars[0] == '，')
-            return "......"
-        if (chars.size > 1 && randomOneTen() > 5)
-            return "${chars[0]}......${String(chars)}"
-        else if (part == "n" && randomOneTen() > 5 ) {
-            repeat(chars.count()) { O += "〇" }
-            return O
+            return "……"
+        if (chars.size > 1 && randomOneTen() > 50)
+            return "${chars[0]}……${String(chars)}"
+        else if (part == "n" && randomOneTen() > 50) {
+            repeat(chars.count()) { pon += "〇" }
+            return pon
         }
-        return "......${String(chars)}"
+        return "……${String(chars)}"
     }
 }
