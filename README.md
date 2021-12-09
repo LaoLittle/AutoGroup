@@ -11,6 +11,7 @@
 + 戳一戳机器人，当前话题自动打断 ( 概率触发反击 )
 + 复读跟读，让 +1 显得更有魅力
 + 入群欢迎，让新人微笑面对本插件
++ 淫语翻译机(yinglish)，让群友不知所措
 
 ## 你还在等什么？
 
@@ -22,4 +23,4 @@
 
 使用`/perm add g群号 org.laolittle.plugin.autogroup:timer.nudge`
 
-　　　　　　　　　　　　　　　　　<font size=1>本品不能替代药品</font>
+　　　　　　　　　　　　　　　　　<sub>本品不能替代药品</sub>
