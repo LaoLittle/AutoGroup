@@ -44,7 +44,6 @@ import org.laolittle.plugin.joinorquit.AutoConfig.nudgeMin
 import org.laolittle.plugin.joinorquit.AutoConfig.nudgedReply
 import org.laolittle.plugin.joinorquit.AutoConfig.quitMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.repeatSec
-import org.laolittle.plugin.joinorquit.AutoConfig.yinglishCommand
 import org.laolittle.plugin.joinorquit.model.CacheClear
 import org.laolittle.plugin.joinorquit.model.getPat
 import org.laolittle.plugin.joinorquit.util.Tools
@@ -60,7 +59,7 @@ import java.util.*
 object AutoGroup : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.AutoGroup",
-        version = "1.1.1",
+        version = "1.2",
         name = "AutoGroup"
     ) {
         author("LaoLittle")
@@ -164,52 +163,6 @@ object AutoGroup : KotlinPlugin(
             group.sendMessage(msg)
         }
 
-        /**
-         * 一些小功能 ✩
-         * 目前加入:
-         * allinall 总之就是假消息
-         *
-         * */
-        GlobalEventChannel.subscribeGroupMessages {
-            /*
-            "justtest" {
-                for (i in nudgedReply)
-                    subject.sendMessage(i)
-            }
-            */
-            startsWith("allinall") {
-                val msg = buildForwardMessage {
-                    val randomMember = subject.members.random()
-                    add(randomMember, PlainText(it))
-                }
-                if (it != "")
-                    subject.sendMessage(msg)
-            }
-
-            yinglishCommand {
-                subject.sendMessage("请输入要翻译的内容哦 ✩")
-                selectMessages {
-                    default {
-                        // val a = TFIDFAnalyzer().analyze(it, 100)
-                        val b = JiebaSegmenter().process(it, JiebaSegmenter.SegMode.INDEX)
-                        var yinglish = ""
-
-                        b.forEach { keyWord ->
-                            val part = WordDictionary.getInstance().parts[keyWord.word]
-                            val chars = keyWord.word.toCharArray()
-                            yinglish = yinglish.plus(Tools.getYinglish(chars, 5, part))
-                        }
-                        subject.sendMessage(yinglish)
-                        Unit
-                    }
-                    timeout(8_000){
-                        subject.sendMessage("太久了哦 ✩")
-                        Unit
-                    }
-                }
-            }
-        }
-
         GlobalEventChannel.subscribeAlways<BotJoinGroupEvent.Invite> {
             group.sendMessage("我来啦！！！")
         }
@@ -268,6 +221,52 @@ object AutoGroup : KotlinPlugin(
                 }
             }
             lastMessage[group.id] = message.serializeToMiraiCode()
+        }
+
+        /**
+         * 一些小功能
+         * 目前加入:
+         * allinall 总之就是假消息
+         * yinglish 淫语翻译姬！✩
+         * */
+        GlobalEventChannel.subscribeGroupMessages {
+            /*
+            "justtest" {
+                for (i in nudgedReply)
+                    subject.sendMessage(i)
+            }
+            */
+            startsWith("allinall") {
+                val msg = buildForwardMessage {
+                    val randomMember = subject.members.random()
+                    add(randomMember, PlainText(it))
+                }
+                if (it != "")
+                    subject.sendMessage(msg)
+            }
+
+            AutoConfig.yinglishCommand {
+                subject.sendMessage("请输入要翻译的内容哦 ✩")
+                selectMessages {
+                    default {
+                        // val a = TFIDFAnalyzer().analyze(it, 100)
+                        val b = JiebaSegmenter().process(it, JiebaSegmenter.SegMode.INDEX)
+                        var yinglish = ""
+
+                        b.forEach { keyWord ->
+                            val part = WordDictionary.getInstance().parts[keyWord.word]
+                            val chars = keyWord.word.toCharArray()
+                            yinglish = yinglish.plus(Tools.getYinglish(chars, part))
+                        }
+                        subject.sendMessage(yinglish)
+                        Unit
+                    }
+                    timeout(8_000) {
+                        subject.sendMessage("太久了哦 ✩")
+                        Unit
+                    }
+                }
+            }
         }
 
         val cacheClear = CacheClear()

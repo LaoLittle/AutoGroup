@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "org.laolittle.plugin.joinorquit"
-version = "1.1.1"
+version = "1.2"
 
 repositories {
     maven("https://maven.aliyun.com/repository/public")
