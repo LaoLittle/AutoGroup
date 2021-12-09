@@ -47,7 +47,7 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     @ValueDescription(
         """
         Bot 被管理员解禁时的回复
-        参数: %主动% (解禁操作人)
+        变量: %主动% (解禁操作人)
         """
     )
     val botUnmuteMessage: String by value("我自由啦！感谢%主动% 大人 🥵🥵🥵🥵🥵🥵🥵🥵")
@@ -55,7 +55,7 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     @ValueDescription(
         """
         群员被禁言时的回复
-        参数: %主动% (解禁操作人), %被动% (被解禁的成员)
+        变量: %主动% (解禁操作人), %被动% (被解禁的成员)
         特殊: botOperatedMuteMessage 为 Bot 主动发起禁言时的回复
     """
     )
@@ -65,7 +65,7 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     @ValueDescription(
         """
         群员被解禁时的回复
-        参数: %主动% (解禁操作人), %被动% (被解禁的成员)
+        变量: %主动% (解禁操作人), %被动% (被解禁的成员)
         特殊: botOperatedUnmuteMessage 为 Bot 主动解除禁言时的回复
     """
     )
@@ -75,7 +75,7 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     @ValueDescription(
         """
         全体解禁时的回复
-        参数: %主动% (解禁操作人)
+        变量: %主动% (解禁操作人)
     """
     )
     val groupMuteAllRelease: String by value("嗯？好像能说话了耶")
@@ -83,7 +83,7 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     @ValueDescription(
         """
         有人被踢出群时的回复
-        参数: %主动% (踢人操作人), %被动% (被踢出的前群员)
+        变量: %主动% (踢人操作人), %被动% (被踢出的前群员)
     """
     )
     val kickMessage: String by value("有个人被%主动% 踢了！好可怕")
@@ -91,10 +91,16 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     @ValueDescription(
         """
         有人主动退群时的回复
-        参数: %主动% (退出的前群员)
+        变量: %主动% (退出的前群员)
     """
     )
     val quitMessage: String by value("有个人悄悄退群了...")
+
+    @ValueDescription("加入复读的冷却时长 (单位: 秒)")
+    val repeatSec: Long by value(15L)
+
+    @ValueDescription("淫语翻译触发关键词")
+    val yinglishCommand: String by value("翻译")
 /*
     @ValueDescription("是否在禁言期间持续发送消息给操作人以及发送的消息")
     val keepSendMessageWhenMuted: Boolean by value(false)
