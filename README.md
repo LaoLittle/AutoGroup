@@ -23,4 +23,9 @@
 
 使用`/perm add g群号 org.laolittle.plugin.autogroup:timer.nudge`
 
+>## 使用的项目
+[https://github.com/RimoChan/yinglish](RimoChan/yinglish)
+
+[https://github.com/huaban/jieba-analysis](huaban/jieba-analysis)
+
 　　　　　　　　　　　　　　　　　<sub>本品不能替代药品</sub>
