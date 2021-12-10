@@ -31,6 +31,12 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     @ValueDescription("戳一戳触发反击的回复消息")
     val counterNudgeMessage: String by value("戳回去(￣ ‘i ￣;)")
 
+    @ValueDescription("触发戳一戳超级加倍的概率 (仅触发反击时)")
+    val superNudge: Int by value(15)
+    val superNudgeMessage: String by value("超级加倍！")
+    @ValueDescription("超级加倍戳一戳次数")
+    val superNudgeTimes: Int by value(10)
+
     @ValueDescription(
         """
         Bot 被禁言后对禁言操作者私聊的消息
@@ -96,14 +102,18 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     )
     val quitMessage: String by value("有个人悄悄退群了...")
 
-    @ValueDescription("加入复读的冷却时长 (单位: 秒)")
-    val repeatSec: Long by value(15L)
+    @ValueDescription("""
+        加入复读的冷却时长 (单位: 秒)
+        为-1时关闭此功能
+        """)
+    val repeatSec: Long by value(25L)
 
     @ValueDescription("淫语翻译触发关键词")
     val yinglishCommand: String by value("翻译")
 
     @ValueDescription("淫乱度 (%)")
-    var yingLevel: Int by value(50)
+    var yingLevel: Int by value(70)
+
 /*
     @ValueDescription("是否在禁言期间持续发送消息给操作人以及发送的消息")
     val keepSendMessageWhenMuted: Boolean by value(false)
