@@ -46,7 +46,6 @@ public class WordDictionary {
 
     /**
      * for ES to initialize the user dictionary.
-     *
      */
     public void init(Path configFile) {
         String abspath = configFile.toAbsolutePath().toString();
