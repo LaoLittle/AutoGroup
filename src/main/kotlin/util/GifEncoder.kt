@@ -13,6 +13,7 @@ import javax.imageio.metadata.IIOMetadataNode
 import javax.imageio.stream.FileImageOutputStream
 import javax.imageio.stream.ImageOutputStream
 
+@Suppress("KotlinConstantConditions", "SameParameterValue")
 class GifEncoder private constructor(outputStream: ImageOutputStream, imageType: Int, delay: Int, loop: Boolean) {
     private val writer: ImageWriter = ImageIO.getImageWritersBySuffix("gif").next()
     private val params: ImageWriteParam = writer.defaultWriteParam
