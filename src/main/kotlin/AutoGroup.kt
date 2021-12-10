@@ -63,7 +63,7 @@ import java.util.*
 object AutoGroup : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.AutoGroup",
-        version = "1.8.9",
+        version = "1.2.1",
         name = "AutoGroup"
     ) {
         author("LaoLittle")
@@ -195,7 +195,12 @@ object AutoGroup : KotlinPlugin(
                         when ((1..100).random()){
                             in 1..superNudge -> {
                                 repeat(superNudgeTimes) {
-                                    from.nudge().sendTo(subject)
+                                    try {
+                                        if (!from.nudge().sendTo(subject))
+                                            subject.sendMessage(PokeMessage.ChuoYiChuo)
+                                    } catch (e: UnsupportedOperationException){
+                                        subject.sendMessage(PokeMessage.ChuoYiChuo)
+                                    }
                                 }
                                 delay(1000)
                                 superNudgeMessage
@@ -269,10 +274,10 @@ object AutoGroup : KotlinPlugin(
                     selectMessages {
                         default {
                             // val a = TFIDFAnalyzer().analyze(it, 100)
-                            val b = JiebaSegmenter().process(it, JiebaSegmenter.SegMode.SEARCH)
+                            val foo = JiebaSegmenter().process(it, JiebaSegmenter.SegMode.SEARCH)
                             var yinglish = ""
 
-                            b.forEach { keyWord ->
+                            foo.forEach { keyWord ->
                                 val part = WordDictionary.getInstance().parts[keyWord.word]
                                 val chars = keyWord.word.toCharArray()
                                 yinglish = yinglish.plus(Tools.getYinglishNode(chars, part))
