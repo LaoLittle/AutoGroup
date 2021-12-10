@@ -112,7 +112,7 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     val yinglishCommand: String by value("翻译")
 
     @ValueDescription("淫乱度 (%)")
-    var yingLevel: Int by value(70)
+    var yinLevel: Int by value(70)
 
 /*
     @ValueDescription("是否在禁言期间持续发送消息给操作人以及发送的消息")
