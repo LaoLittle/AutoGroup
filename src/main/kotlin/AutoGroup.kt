@@ -44,6 +44,10 @@ import org.laolittle.plugin.joinorquit.AutoConfig.nudgeMin
 import org.laolittle.plugin.joinorquit.AutoConfig.nudgedReply
 import org.laolittle.plugin.joinorquit.AutoConfig.quitMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.repeatSec
+import org.laolittle.plugin.joinorquit.AutoConfig.superNudge
+import org.laolittle.plugin.joinorquit.AutoConfig.superNudgeMessage
+import org.laolittle.plugin.joinorquit.AutoConfig.superNudgeTimes
+import org.laolittle.plugin.joinorquit.AutoConfig.yinglishCommand
 import org.laolittle.plugin.joinorquit.model.CacheClear
 import org.laolittle.plugin.joinorquit.model.getPat
 import org.laolittle.plugin.joinorquit.util.Tools
@@ -59,7 +63,7 @@ import java.util.*
 object AutoGroup : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.AutoGroup",
-        version = "1.2",
+        version = "1.8.9",
         name = "AutoGroup"
     ) {
         author("LaoLittle")
@@ -71,7 +75,8 @@ object AutoGroup : KotlinPlugin(
         if (!osName.startsWith("Windows")) System.setProperty("java.awt.headless", "true")
         AutoConfig.reload()
         val lastMessage: MutableMap<Long, String> = mutableMapOf()
-        val onEnable: MutableMap<Long, Boolean> = mutableMapOf()
+        val onEnable: MutableSet<Long> = mutableSetOf()
+        val onYinable: MutableSet<Long> = mutableSetOf()
         val nudgePerm = this.registerPermission("timer.nudge", "每隔${nudgeMin}分钟戳一戳")
 
         logger.info { "开始折磨群友" }
@@ -84,9 +89,9 @@ object AutoGroup : KotlinPlugin(
                         if (nowHour !in 0..8 && nowHour !in 22..23) {
                             logger.info { "开戳" }
                             bot.groups.filter { nudgePerm.testPermission(it.permitteeId) }.forEach {
-                                val sender = it.members.random()
+                                val victim = it.members.random()
                                 delay(3000)
-                                sender.nudge().sendTo(it)
+                                victim.nudge().sendTo(it)
                             }
                         }
                     }
@@ -187,20 +192,31 @@ object AutoGroup : KotlinPlugin(
             if (target == bot) {
                 val msg = when ((1..100).random()) {
                     in 1..counterNudge -> {
-                        if (counterNudgeMessage != "")
-                            subject.sendMessage(counterNudgeMessage)
-                        delay(1000)
-                        try {
-                            if (!from.nudge().sendTo(subject)) {
-                                subject.sendMessage("戳不了...那我")
+                        when ((1..100).random()){
+                            in 1..superNudge -> {
+                                repeat(superNudgeTimes) {
+                                    from.nudge().sendTo(subject)
+                                }
                                 delay(1000)
-                                subject.sendMessage(PokeMessage.ChuoYiChuo)
+                                superNudgeMessage
                             }
-                        } catch (e: UnsupportedOperationException) {
-                            logger.info { "当前使用协议为不支持的协议，改用Poke戳一戳" }
-                            subject.sendMessage(PokeMessage.ChuoYiChuo)
+                            else -> {
+                                if (counterNudgeMessage != "")
+                                    subject.sendMessage(counterNudgeMessage)
+                                delay(1000)
+                                try {
+                                    if (!from.nudge().sendTo(subject)) {
+                                        subject.sendMessage("戳不了...那我")
+                                        delay(1000)
+                                        subject.sendMessage(PokeMessage.ChuoYiChuo)
+                                    }
+                                } catch (e: UnsupportedOperationException) {
+                                    logger.info { "当前使用协议为不支持的协议，改用Poke戳一戳" }
+                                    subject.sendMessage(PokeMessage.ChuoYiChuo)
+                                }
+                                "哼"
+                            }
                         }
-                        "哼"
                     }
                     else -> nudgedReply.random()
                 }
@@ -209,10 +225,10 @@ object AutoGroup : KotlinPlugin(
             }
         }
 
-        GlobalEventChannel.subscribeAlways<GroupMessageEvent> {
-            if (onEnable[group.id] == true) return@subscribeAlways
+        GlobalEventChannel.filter { repeatSec > 0 }.subscribeAlways<GroupMessageEvent> {
+            if (onEnable.contains(group.id)) return@subscribeAlways
             if (lastMessage[group.id] == message.serializeToMiraiCode()) {
-                onEnable[group.id] = true
+                onEnable.add(group.id)
                 subject.sendMessage(message)
                 logger.info { "复读了一次" }
                 this@AutoGroup.launch {
@@ -237,34 +253,45 @@ object AutoGroup : KotlinPlugin(
             }
             */
             startsWith("allinall") {
+                if (it == "") return@startsWith
                 val msg = buildForwardMessage {
                     val randomMember = subject.members.random()
                     add(randomMember, PlainText(it))
                 }
-                if (it != "")
                     subject.sendMessage(msg)
             }
 
-            AutoConfig.yinglishCommand {
+            yinglishCommand {
+                if (onYinable.contains(sender.id)) return@yinglishCommand
+                onYinable.add(sender.id)
                 subject.sendMessage("请输入要翻译的内容哦 ✩")
-                selectMessages {
-                    default {
-                        // val a = TFIDFAnalyzer().analyze(it, 100)
-                        val b = JiebaSegmenter().process(it, JiebaSegmenter.SegMode.INDEX)
-                        var yinglish = ""
+                this@AutoGroup.launch {
+                    selectMessages {
+                        default {
+                            // val a = TFIDFAnalyzer().analyze(it, 100)
+                            val b = JiebaSegmenter().process(it, JiebaSegmenter.SegMode.SEARCH)
+                            var yinglish = ""
 
-                        b.forEach { keyWord ->
-                            val part = WordDictionary.getInstance().parts[keyWord.word]
-                            val chars = keyWord.word.toCharArray()
-                            yinglish = yinglish.plus(Tools.getYinglish(chars, part))
+                            b.forEach { keyWord ->
+                                val part = WordDictionary.getInstance().parts[keyWord.word]
+                                val chars = keyWord.word.toCharArray()
+                                yinglish = yinglish.plus(Tools.getYinglishNode(chars, part))
+                            }
+                            subject.sendMessage(yinglish)
+                            Unit
                         }
-                        subject.sendMessage(yinglish)
-                        Unit
+                        timeout(25_000) {
+                            subject.sendMessage("太久了哦 ✩")
+                            Unit
+                        }
                     }
-                    timeout(8_000) {
-                        subject.sendMessage("太久了哦 ✩")
-                        Unit
-                    }
+                    onYinable.remove(sender.id)
+                }
+            }
+
+            "party" {
+                repeat(10) {
+                    sender.nudge().sendTo(subject)
                 }
             }
         }
