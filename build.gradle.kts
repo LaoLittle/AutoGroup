@@ -13,3 +13,7 @@ repositories {
     maven("https://maven.aliyun.com/repository/public")
     mavenCentral()
 }
+
+dependencies {
+    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
+}
