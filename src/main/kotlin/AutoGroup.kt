@@ -192,13 +192,13 @@ object AutoGroup : KotlinPlugin(
             if (target == bot) {
                 val msg = when ((1..100).random()) {
                     in 1..counterNudge -> {
-                        when ((1..100).random()){
+                        when ((1..100).random()) {
                             in 1..superNudge -> {
                                 repeat(superNudgeTimes) {
                                     try {
                                         if (!from.nudge().sendTo(subject))
                                             subject.sendMessage(PokeMessage.ChuoYiChuo)
-                                    } catch (e: UnsupportedOperationException){
+                                    } catch (e: UnsupportedOperationException) {
                                         subject.sendMessage(PokeMessage.ChuoYiChuo)
                                     }
                                 }
@@ -230,7 +230,7 @@ object AutoGroup : KotlinPlugin(
             }
         }
 
-        GlobalEventChannel.filter { repeatSec > 0 }.subscribeAlways<GroupMessageEvent> {
+        GlobalEventChannel.filter { repeatSec >= 0 }.subscribeAlways<GroupMessageEvent> {
             if (onEnable.contains(group.id)) return@subscribeAlways
             if (lastMessage[group.id] == message.serializeToMiraiCode()) {
                 onEnable.add(group.id)
@@ -263,7 +263,7 @@ object AutoGroup : KotlinPlugin(
                     val randomMember = subject.members.random()
                     add(randomMember, PlainText(it))
                 }
-                    subject.sendMessage(msg)
+                subject.sendMessage(msg)
             }
 
             yinglishCommand {
