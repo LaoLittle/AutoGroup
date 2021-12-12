@@ -34,6 +34,7 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     @ValueDescription("触发戳一戳超级加倍的概率 (仅触发反击时)")
     val superNudge: Int by value(15)
     val superNudgeMessage: String by value("超级加倍！")
+
     @ValueDescription("超级加倍戳一戳次数")
     val superNudgeTimes: Int by value(10)
 
@@ -102,10 +103,12 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     )
     val quitMessage: String by value("有个人悄悄退群了...")
 
-    @ValueDescription("""
+    @ValueDescription(
+        """
         加入复读的冷却时长 (单位: 秒)
         为-1时关闭此功能
-        """)
+        """
+    )
     val repeatSec: Long by value(25L)
 
     @ValueDescription("淫语翻译触发关键词")
@@ -113,6 +116,19 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
 
     @ValueDescription("淫乱度 (%)")
     var yinLevel: Int by value(70)
+
+    @ValueDescription("随机禁言的命令")
+    val tenkiNiNokoSaReTaKo: String by value("天弃之子")
+
+    @ValueDescription("轮盘赌注命令")
+    val roulette: String by value("赌")
+    @ValueDescription("轮盘赌注最大支持人数 (范围: 大于等于2)")
+    val maxPlayer: Int by value(6)
+    @ValueDescription("轮盘赌注消息")
+    val rouletteOutMessage: Set<String> by value(setOf("Boom!"))
+    val roulettePassedMessage: Set<String> by value(setOf("你扣动了扳机，但什么也没有发生...", "Boom! 远处传来了爆炸的声音，但你什么事情也没有"))
+    @ValueDescription("禁言时间范围 (单位: 秒)")
+    val rouletteOutMuteRange: IntRange by value((60..100))
 
 /*
     @ValueDescription("是否在禁言期间持续发送消息给操作人以及发送的消息")
