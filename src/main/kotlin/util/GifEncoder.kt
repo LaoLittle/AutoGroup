@@ -131,7 +131,7 @@ class GifEncoder private constructor(outputStream: ImageOutputStream, imageType:
 
         /**
          * convert Jpeg to Gif
-         * PNG is Not supported (For now)
+         * PNG is not support (For now)
          *
          * 将Jpeg转换为Gif图片
          * 暂不支持PNG图片
