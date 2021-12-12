@@ -360,7 +360,7 @@ object AutoGroup : KotlinPlugin(
                                             rouletteData.remove(subject)
                                             subject.sendMessage(rouletteOutMessage.random())
                                             try {
-                                                sender.mute(rouletteOutMuteRange.random())
+                                                sender.mute((1..rouletteOutMuteRange).random())
                                             } catch (e: PermissionDeniedException){
                                                 subject.sendMessage("可惜我没法禁言呢")
                                             } catch (e: IllegalStateException){

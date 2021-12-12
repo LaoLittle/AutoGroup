@@ -127,8 +127,8 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     @ValueDescription("轮盘赌注消息")
     val rouletteOutMessage: Set<String> by value(setOf("Boom!"))
     val roulettePassedMessage: Set<String> by value(setOf("你扣动了扳机，但什么也没有发生...", "Boom! 远处传来了爆炸的声音，但你什么事情也没有"))
-    @ValueDescription("禁言时间范围 (单位: 秒)")
-    val rouletteOutMuteRange: IntRange by value((60..100))
+    @ValueDescription("最大禁言时间 (单位: 秒)")
+    val rouletteOutMuteRange: Int by value(100)
 
 /*
     @ValueDescription("是否在禁言期间持续发送消息给操作人以及发送的消息")
