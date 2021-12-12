@@ -5,7 +5,7 @@ import org.laolittle.plugin.joinorquit.AutoConfig.yinLevel
 
 object Tools {
 
-   fun String.encodeToMiraiCode(initiative: User, passive: User): String {
+    fun String.encodeToMiraiCode(initiative: User, passive: User): String {
         return this
             .replace("%主动%", "[mirai:at:${initiative.id}]")
             .replace("%被动%", "[mirai:at:${passive.id}]")
