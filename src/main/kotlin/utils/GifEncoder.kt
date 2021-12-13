@@ -1,4 +1,4 @@
-package org.laolittle.plugin.joinorquit.util
+package org.laolittle.plugin.joinorquit.utils
 
 import java.awt.geom.AffineTransform
 import java.awt.image.AffineTransformOp

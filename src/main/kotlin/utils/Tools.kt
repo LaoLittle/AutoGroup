@@ -1,4 +1,4 @@
-package org.laolittle.plugin.joinorquit.util
+package org.laolittle.plugin.joinorquit.utils
 
 import net.mamoe.mirai.contact.User
 import org.laolittle.plugin.joinorquit.AutoConfig.yinLevel
@@ -16,21 +16,21 @@ object Tools {
         else this.replace("%被动%", "[mirai:at:${user.id}]")
     }
 
-    fun getYinglishNode(chars: CharArray, part: String?): String {
+    fun getYinglishNode(wordChars: CharArray, part: String?): String {
         val randomOneTen = { (1..100).random() }
         var pon = ""
         if (randomOneTen() > yinLevel)
-            return String(chars)
-        if (chars[0] == '！' || chars[0] == '!')
+            return String(wordChars)
+        if (wordChars[0] == '！' || wordChars[0] == '!')
             return "❤"
-        if (chars[0] == '。' || chars[0] == '，')
+        if (wordChars[0] == '。' || wordChars[0] == '，')
             return "…"
-        if (chars.size > 1 && randomOneTen() > 50)
-            return "${chars[0]}…${String(chars)}"
+        if (wordChars.size > 1 && randomOneTen() > 50)
+            return "${wordChars[0]}…${String(wordChars)}"
         else if (part == "n" && randomOneTen() > 50) {
-            repeat(chars.count()) { pon += "〇" }
+            repeat(wordChars.count()) { pon += "〇" }
             return pon
         }
-        return "…${String(chars)}"
+        return "…${String(wordChars)}"
     }
 }
