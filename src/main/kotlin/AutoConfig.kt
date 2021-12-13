@@ -122,12 +122,15 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
 
     @ValueDescription("轮盘赌注命令")
     val roulette: String by value("赌")
-    @ValueDescription("轮盘赌注最大支持人数 (范围: 大于等于2)")
+
+    @ValueDescription("轮盘赌注弹槽量")
     val maxPlayer: Int by value(6)
+
     @ValueDescription("轮盘赌注消息")
-    val rouletteOutMessage: Set<String> by value(setOf("Boom!"))
-    val roulettePassedMessage: Set<String> by value(setOf("你扣动了扳机，但什么也没有发生...", "Boom! 远处传来了爆炸的声音，但你什么事情也没有"))
-    @ValueDescription("最大禁言时间 (单位: 秒)")
+    val rouletteOutMessage: Set<String> by value(setOf("Bang!"))
+    val roulettePassedMessage: Set<String> by value(setOf("你扣动了扳机，但什么也没有发生...", "Bang! 远处传来了一声巨响，但你什么事也没有"))
+
+    @ValueDescription("轮盘赌注最大禁言时间 (单位: 秒)")
     val rouletteOutMuteRange: Int by value(100)
 
 /*
