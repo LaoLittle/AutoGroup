@@ -352,7 +352,7 @@ object AutoGroup : KotlinPlugin(
                     }
                 }
 
-                Timer().schedule(calc, Date(), 30_000)
+                Timer().schedule(calc, Date(), 120_000)
 
                 GlobalEventChannel.subscribe<GroupMessageEvent> Here@{
                     if (this.subject == rouGroup) {
