@@ -23,6 +23,7 @@ import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.utils.MiraiExperimentalApi
 import net.mamoe.mirai.utils.error
 import net.mamoe.mirai.utils.info
+import org.laolittle.plugin.joinorquit.AutoConfig.allowRejoinRoulette
 import org.laolittle.plugin.joinorquit.AutoConfig.botMutedMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.botOperatedMuteMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.botOperatedUnmuteMessage
@@ -48,8 +49,8 @@ import org.laolittle.plugin.joinorquit.AutoConfig.tenkiNiNokoSaReTaKo
 import org.laolittle.plugin.joinorquit.AutoConfig.yinglishCommand
 import org.laolittle.plugin.joinorquit.model.CacheClear
 import org.laolittle.plugin.joinorquit.model.PatPatTool.getPat
-import org.laolittle.plugin.joinorquit.util.Tools
 import org.laolittle.plugin.joinorquit.util.Tools.encodeToMiraiCode
+import org.laolittle.plugin.joinorquit.util.Tools.getYinglishNode
 import util.NumberUtil
 import java.io.File
 import java.time.LocalDateTime
@@ -269,14 +270,15 @@ object AutoGroup : KotlinPlugin(
                         default {
                             // val a = TFIDFAnalyzer().analyze(it, 100)
                             val foo = JiebaSegmenter().process(it, JiebaSegmenter.SegMode.SEARCH)
-                            var yinglish = ""
+                            val yinglish = StringBuffer()
 
                             foo.forEach { keyWord ->
                                 val part = WordDictionary.getInstance().parts[keyWord.word]
                                 val chars = keyWord.word.toCharArray()
-                                yinglish = yinglish.plus(Tools.getYinglishNode(chars, part))
+                                yinglish.append(getYinglishNode(chars, part))
                             }
-                            subject.sendMessage(yinglish)
+
+                            subject.sendMessage(yinglish.toString())
                             Unit
                         }
                         timeout(25_000) {
@@ -338,6 +340,7 @@ object AutoGroup : KotlinPlugin(
                                 when ((1..4).random()) {
                                     2 -> {
                                         val luckyDog = subject.members.random()
+                                        subject.sendMessage(rouletteOutMessage.random())
                                         subject.sendMessage("枪走火了！ ${luckyDog.nameCardOrNick} 中枪了！")
                                         try {
                                             luckyDog.mute(30)
@@ -375,6 +378,7 @@ object AutoGroup : KotlinPlugin(
                                     return@Here ListeningStatus.STOPPED
                                 }
                                 else -> {
+                                    if (allowRejoinRoulette)
                                     rouletteData[subject]?.add(sender)
                                     delayTimes = 0
                                     subject.sendMessage(AutoConfig.roulettePassedMessage.random())
