@@ -9,11 +9,10 @@ import org.laolittle.plugin.joinorquit.AutoGroup
 import java.io.File
 import java.util.*
 
-@MiraiExperimentalApi
-@ExperimentalCommandDescriptors
-@ConsoleExperimentalApi
-@ExperimentalSerializationApi
 class CacheClear : TimerTask() {
+    @OptIn(ExperimentalSerializationApi::class, ConsoleExperimentalApi::class, ExperimentalCommandDescriptors::class,
+        MiraiExperimentalApi::class
+    )
     override fun run() {
         val tmp = File("${AutoGroup.dataFolder}/tmp")
         when (if (tmp.exists()) tmp.deleteRecursively() else null) {
