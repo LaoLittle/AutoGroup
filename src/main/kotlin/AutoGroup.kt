@@ -49,9 +49,9 @@ import org.laolittle.plugin.joinorquit.AutoConfig.tenkiNiNokoSaReTaKo
 import org.laolittle.plugin.joinorquit.AutoConfig.yinglishCommand
 import org.laolittle.plugin.joinorquit.model.CacheClear
 import org.laolittle.plugin.joinorquit.model.PatPatTool.getPat
-import org.laolittle.plugin.joinorquit.util.Tools.encodeToMiraiCode
-import org.laolittle.plugin.joinorquit.util.Tools.getYinglishNode
-import util.NumberUtil
+import org.laolittle.plugin.joinorquit.utils.NumberUtil
+import org.laolittle.plugin.joinorquit.utils.Tools.encodeToMiraiCode
+import org.laolittle.plugin.joinorquit.utils.Tools.getYinglishNode
 import java.io.File
 import java.time.LocalDateTime
 import java.util.*
@@ -274,8 +274,8 @@ object AutoGroup : KotlinPlugin(
 
                             foo.forEach { keyWord ->
                                 val part = WordDictionary.getInstance().parts[keyWord.word]
-                                val chars = keyWord.word.toCharArray()
-                                yinglish.append(getYinglishNode(chars, part))
+                                val wordChars = keyWord.word.toCharArray()
+                                yinglish.append(getYinglishNode(wordChars, part))
                             }
 
                             subject.sendMessage(yinglish.toString())
@@ -293,7 +293,7 @@ object AutoGroup : KotlinPlugin(
 
             tenkiNiNokoSaReTaKo {
                 if (!sender.isOperator()) {
-                    subject.sendMessage("不是管理员不能选出天弃之子呢")
+                    subject.sendMessage("你不是管理员不能选出天弃之子呢")
                     return@tenkiNiNokoSaReTaKo
                 }
                 if (!group.botPermission.isOperator()) {

@@ -6,7 +6,7 @@ import net.mamoe.mirai.console.util.ConsoleExperimentalApi
 import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.utils.MiraiExperimentalApi
 import org.laolittle.plugin.joinorquit.AutoGroup
-import org.laolittle.plugin.joinorquit.util.GifEncoder
+import org.laolittle.plugin.joinorquit.utils.GifEncoder
 import java.awt.AlphaComposite
 import java.awt.Color
 import java.awt.RenderingHints
