@@ -29,7 +29,7 @@ object NumberUtil {
             count++
         }
         if (isNegative) sb.insert(0, CN_NEGATIVE)
-      val chs = sb.toString().replace("零[千百十]".toRegex(), "零").replace("零+万".toRegex(), "万")
+        val chs = sb.toString().replace("零[千百十]".toRegex(), "零").replace("零+万".toRegex(), "万")
             .replace("零+亿".toRegex(), "亿").replace("亿万".toRegex(), "亿零")
             .replace("零+".toRegex(), "零").replace("零$".toRegex(), "")
 

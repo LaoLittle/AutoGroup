@@ -20,20 +20,21 @@ import javax.imageio.ImageIO
 @Suppress("SameParameterValue")
 object PatPatTool {
 
-    @OptIn(ExperimentalSerializationApi::class, ConsoleExperimentalApi::class, ExperimentalCommandDescriptors::class,
+    @OptIn(
+        ExperimentalSerializationApi::class, ConsoleExperimentalApi::class, ExperimentalCommandDescriptors::class,
         MiraiExperimentalApi::class
     )
-    fun getPat(hippopotomonstrosesquippedaliophobia: Contact, delay: Int){
+    fun getPat(hippopotomonstrosesquippedaliophobia: Contact, delay: Int) {
         val qqId = hippopotomonstrosesquippedaliophobia.id
         // hippopotomonstrosesquippedaliophobia: 长单词恐惧症
         val tmp = File("${AutoGroup.dataFolder}/tmp")
-        if(!tmp.exists()) tmp.mkdir()
-        if(tmp.resolve("${qqId}_pat.gif").exists()) return
+        if (!tmp.exists()) tmp.mkdir()
+        if (tmp.resolve("${qqId}_pat.gif").exists()) return
         val avatar = URL(hippopotomonstrosesquippedaliophobia.avatarUrl).openStream()
         mkImg(avatar, tmp.resolve("${qqId}_pat.gif"), delay)
     }
 
-    private fun mkImg(avatar: InputStream, savePath: File, delay: Int){
+    private fun mkImg(avatar: InputStream, savePath: File, delay: Int) {
         val targetSize = 112
         val cornerRadius = 112
         val avatarImage = ImageIO.read(avatar)
@@ -61,7 +62,8 @@ object PatPatTool {
     }
 
     //w: 宽 h: 高 x,y: 头像位置 hy:手的y轴偏移
-    @OptIn(ExperimentalSerializationApi::class, ConsoleExperimentalApi::class, ExperimentalCommandDescriptors::class,
+    @OptIn(
+        ExperimentalSerializationApi::class, ConsoleExperimentalApi::class, ExperimentalCommandDescriptors::class,
         MiraiExperimentalApi::class
     )
     private fun processImage(

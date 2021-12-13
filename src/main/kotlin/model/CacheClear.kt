@@ -10,7 +10,8 @@ import java.io.File
 import java.util.*
 
 class CacheClear : TimerTask() {
-    @OptIn(ExperimentalSerializationApi::class, ConsoleExperimentalApi::class, ExperimentalCommandDescriptors::class,
+    @OptIn(
+        ExperimentalSerializationApi::class, ConsoleExperimentalApi::class, ExperimentalCommandDescriptors::class,
         MiraiExperimentalApi::class
     )
     override fun run() {
