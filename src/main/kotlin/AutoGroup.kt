@@ -13,11 +13,8 @@ import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.contact.*
 import net.mamoe.mirai.contact.Contact.Companion.sendImage
-import net.mamoe.mirai.event.GlobalEventChannel
-import net.mamoe.mirai.event.ListeningStatus
+import net.mamoe.mirai.event.*
 import net.mamoe.mirai.event.events.*
-import net.mamoe.mirai.event.selectMessages
-import net.mamoe.mirai.event.subscribeGroupMessages
 import net.mamoe.mirai.message.code.MiraiCode.deserializeMiraiCode
 import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.utils.MiraiExperimentalApi
@@ -49,7 +46,7 @@ import org.laolittle.plugin.joinorquit.AutoConfig.tenkiNiNokoSaReTaKo
 import org.laolittle.plugin.joinorquit.AutoConfig.yinglishCommand
 import org.laolittle.plugin.joinorquit.model.CacheClear
 import org.laolittle.plugin.joinorquit.model.PatPatTool.getPat
-import org.laolittle.plugin.joinorquit.utils.NumberUtil
+import org.laolittle.plugin.joinorquit.utils.NumberUtil.intConvertToChs
 import org.laolittle.plugin.joinorquit.utils.Tools.encodeToMiraiCode
 import org.laolittle.plugin.joinorquit.utils.Tools.getYinglishNode
 import java.io.File
@@ -71,6 +68,8 @@ object AutoGroup : KotlinPlugin(
         val osName = System.getProperties().getProperty("os.name")
         if (!osName.startsWith("Windows")) System.setProperty("java.awt.headless", "true")
         AutoConfig.reload()
+        val cacheClear = CacheClear()
+        Timer().schedule(cacheClear, Date(), 60 * 30 * 1000)
         val lastMessage: MutableMap<Long, String> = mutableMapOf()
         val onEnable: MutableSet<Long> = mutableSetOf()
         val onYinable: MutableSet<Long> = mutableSetOf()
@@ -274,8 +273,8 @@ object AutoGroup : KotlinPlugin(
 
                             foo.forEach { keyWord ->
                                 val part = WordDictionary.getInstance().parts[keyWord.word]
-                                val wordChars = keyWord.word.toCharArray()
-                                yinglish.append(getYinglishNode(wordChars, part))
+                                val chars = keyWord.word.toCharArray()
+                                yinglish.append(getYinglishNode(chars, part))
                             }
 
                             subject.sendMessage(yinglish.toString())
@@ -293,7 +292,7 @@ object AutoGroup : KotlinPlugin(
 
             tenkiNiNokoSaReTaKo {
                 if (!sender.isOperator()) {
-                    subject.sendMessage("你不是管理员不能选出天弃之子呢")
+                    subject.sendMessage("不是管理员不能选出天弃之子呢")
                     return@tenkiNiNokoSaReTaKo
                 }
                 if (!group.botPermission.isOperator()) {
@@ -313,18 +312,40 @@ object AutoGroup : KotlinPlugin(
                 }
                 rouletteData[subject] = mutableSetOf()
                 val rouGroup = subject
+                subject.sendMessage(buildMessageChain {
+                    add("请")
+                    add(At(sender))
+                    add(" 输入要装填的弹药量")
+                })
+                var bulletNum = 1
+                whileSelectMessages {
+                    default {msg ->
+                        if (Regex("""\D""").containsMatchIn(msg))
+                            subject.sendMessage("请输入数字 !")
+                        else if ((msg.toInt() > maxPlayer) or (msg.toInt() <= 0))
+                            subject.sendMessage("请输入正确的数字 !")
+                        else {
+                            bulletNum = msg.toInt()
+                                return@default false
+                        }
+                        true
+                    }
+                    timeout(10_000) {
+                        subject.sendMessage("太久没装弹了，似乎只装入了一颗呢")
+                        false
+                    }
+                }
+
                 subject.sendMessage(
                     """
                         |现在有一把 "封口枪"
-                        |里面${NumberUtil.intConvertToChs(maxPlayer)}个弹槽只装填了一发子弹
-                        |请加入的群员发送 "s" 对自己开枪
-                        |通过的群员不能再次参与本次赌局
+                        |里面${intConvertToChs(maxPlayer)}个弹槽装填了${intConvertToChs(bulletNum)}发子弹
+                        |群员可以发送 "s" 对自己开枪
                         |被 "禁言子弹" 击中的群员将获得随机禁言套餐！
                     """.trimMargin()
                 )
                 var i = 0
                 var delayTimes = 0
-                val bullet = (1..maxPlayer).random()
                 val calc = object : TimerTask() {
                     override fun run() {
                         this@AutoGroup.launch {
@@ -332,7 +353,7 @@ object AutoGroup : KotlinPlugin(
                             if (delayTimes >= 2) {
                                 subject.sendMessage(
                                     """
-                           太久没有人动那把枪了
+                           许久没有人动那把枪了
                            枪的色泽逐渐暗淡
                         """.trimIndent()
                                 )
@@ -357,13 +378,16 @@ object AutoGroup : KotlinPlugin(
 
                 Timer().schedule(calc, Date(), 120_000)
 
-                GlobalEventChannel.subscribe<GroupMessageEvent> Here@{
+                val bullets = mutableSetOf<Int>()
+                while (bullets.size < bulletNum)
+                    bullets.add((1..maxPlayer).random())
+                GlobalEventChannel.subscribe<GroupMessageEvent> {
                     if (this.subject == rouGroup) {
                         if (message.content == "s" && rouletteData[subject]?.contains(sender) == false) {
                             i++
                             delay(3000)
-                            when (i) {
-                                bullet -> {
+                            when {
+                                bullets.contains(i) -> {
                                     rouletteData.remove(subject)
                                     subject.sendMessage(rouletteOutMessage.random())
                                     try {
@@ -375,11 +399,11 @@ object AutoGroup : KotlinPlugin(
                                         logger.error { "禁言时间异常！$e" }
                                     }
                                     calc.cancel()
-                                    return@Here ListeningStatus.STOPPED
+                                    return@subscribe ListeningStatus.STOPPED
                                 }
                                 else -> {
                                     if (allowRejoinRoulette)
-                                    rouletteData[subject]?.add(sender)
+                                        rouletteData[subject]?.add(sender)
                                     delayTimes = 0
                                     subject.sendMessage(AutoConfig.roulettePassedMessage.random())
                                 }
@@ -396,9 +420,6 @@ object AutoGroup : KotlinPlugin(
                 }
             }
         }
-
-        val cacheClear = CacheClear()
-        Timer().schedule(cacheClear, Date(), 60 * 30 * 1000)
     }
 
     override fun onDisable() {
