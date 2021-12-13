@@ -133,6 +133,9 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     @ValueDescription("轮盘赌注最大禁言时间 (单位: 秒)")
     val rouletteOutMuteRange: Int by value(100)
 
+    @ValueDescription("轮盘赌注是否允许重复加入")
+    val allowRejoinRoulette: Boolean by value(false)
+
 /*
     @ValueDescription("是否在禁言期间持续发送消息给操作人以及发送的消息")
     val keepSendMessageWhenMuted: Boolean by value(false)
