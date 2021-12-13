@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "org.laolittle.plugin.joinorquit"
-version = "1.8.7"
+version = "1.8.8"
 
 repositories {
     maven("https://maven.aliyun.com/repository/public")
@@ -16,4 +16,10 @@ repositories {
 
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
+}
+
+tasks {
+    compileKotlin {
+        kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+    }
 }

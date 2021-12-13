@@ -4,8 +4,6 @@ import com.huaban.analysis.jieba.JiebaSegmenter
 import com.huaban.analysis.jieba.WordDictionary
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.serialization.ExperimentalSerializationApi
-import net.mamoe.mirai.console.command.descriptor.ExperimentalCommandDescriptors
 import net.mamoe.mirai.console.permission.Permission
 import net.mamoe.mirai.console.permission.PermissionService
 import net.mamoe.mirai.console.permission.PermissionService.Companion.testPermission
@@ -13,7 +11,6 @@ import net.mamoe.mirai.console.permission.PermitteeId.Companion.permitteeId
 import net.mamoe.mirai.console.plugin.jvm.AbstractJvmPlugin
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
-import net.mamoe.mirai.console.util.ConsoleExperimentalApi
 import net.mamoe.mirai.contact.*
 import net.mamoe.mirai.contact.Contact.Companion.sendImage
 import net.mamoe.mirai.event.GlobalEventChannel
@@ -34,6 +31,7 @@ import org.laolittle.plugin.joinorquit.AutoConfig.counterNudge
 import org.laolittle.plugin.joinorquit.AutoConfig.counterNudgeMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.groupMuteAllRelease
 import org.laolittle.plugin.joinorquit.AutoConfig.kickMessage
+import org.laolittle.plugin.joinorquit.AutoConfig.maxPlayer
 import org.laolittle.plugin.joinorquit.AutoConfig.memberMutedMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.memberUnmuteMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.nudgeMin
@@ -43,34 +41,31 @@ import org.laolittle.plugin.joinorquit.AutoConfig.repeatSec
 import org.laolittle.plugin.joinorquit.AutoConfig.roulette
 import org.laolittle.plugin.joinorquit.AutoConfig.rouletteOutMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.rouletteOutMuteRange
-import org.laolittle.plugin.joinorquit.AutoConfig.roulettePassedMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.superNudge
 import org.laolittle.plugin.joinorquit.AutoConfig.superNudgeMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.superNudgeTimes
 import org.laolittle.plugin.joinorquit.AutoConfig.tenkiNiNokoSaReTaKo
 import org.laolittle.plugin.joinorquit.AutoConfig.yinglishCommand
 import org.laolittle.plugin.joinorquit.model.CacheClear
-import org.laolittle.plugin.joinorquit.model.getPat
+import org.laolittle.plugin.joinorquit.model.PatPatTool.getPat
 import org.laolittle.plugin.joinorquit.util.Tools
 import org.laolittle.plugin.joinorquit.util.Tools.encodeToMiraiCode
+import util.NumberUtil
 import java.io.File
 import java.time.LocalDateTime
 import java.util.*
 
-@ExperimentalSerializationApi
-@ConsoleExperimentalApi
-@ExperimentalCommandDescriptors
-@MiraiExperimentalApi
 object AutoGroup : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.AutoGroup",
-        version = "1.8.7",
+        version = "1.8.8",
         name = "AutoGroup"
     ) {
         author("LaoLittle")
         info("折磨群友")
     }
 ) {
+    @OptIn(MiraiExperimentalApi::class)
     override fun onEnable() {
         val osName = System.getProperties().getProperty("os.name")
         if (!osName.startsWith("Windows")) System.setProperty("java.awt.headless", "true")
@@ -256,13 +251,6 @@ object AutoGroup : KotlinPlugin(
          * Roulette 轮盘赌注
          * */
         GlobalEventChannel.subscribeGroupMessages {
-            /*
-            "justtest" {
-                for (i in nudgedReply)
-                    subject.sendMessage(i)
-            }
-            */
-
             startsWith("allinall") {
                 if (it == "") return@startsWith
                 val msg = buildForwardMessage {
@@ -306,19 +294,14 @@ object AutoGroup : KotlinPlugin(
                     subject.sendMessage("不是管理员不能选出天弃之子呢")
                     return@tenkiNiNokoSaReTaKo
                 }
-                if (!group.botPermission.isOperator()){
+                if (!group.botPermission.isOperator()) {
                     subject.sendMessage("呜呜，我不是管理员，没法选出天弃之子")
                     logger.error(PermissionDeniedException("呜呜，没权限"))
                     return@tenkiNiNokoSaReTaKo
                 }
-                    subject.sendMessage("看看天弃之子！")
-                    delay(3000)
-                    subject.members.random().mute((1..100).random())
-                    subject.sendMessage(buildMessageChain {
-                        add("是")
-                        add(At(sender))
-                        add(" 哒！")
-                    })
+                subject.sendMessage("看看天弃之子！")
+                delay(3000)
+                subject.members.random().mute((1..100).random())
             }
 
             roulette {
@@ -327,57 +310,43 @@ object AutoGroup : KotlinPlugin(
                     return@roulette
                 }
                 rouletteData[subject] = mutableSetOf()
-                subject.sendMessage("开启了一轮赌局，输入\"加入\"即可加入")
                 val rouGroup = subject
-                var i = 0
-                GlobalEventChannel.subscribe<GroupMessageEvent> {
-                    if (this.subject == rouGroup) {
-                        if (message.content == "加入" && rouletteData[subject]?.contains(sender) == false) {
-                            rouletteData[subject]?.add(sender)
-                            subject.sendMessage("成功加入！")
-                            i++
-                        }
-                    }
-                    if (i == AutoConfig.maxPlayer) {
-                        subject.sendMessage(
-                            """
+                subject.sendMessage(
+                    """
                         |现在有一把 "封口枪"
-                        |里面六个弹槽只装填了一发子弹
-                        |请刚刚加入的群员发送 "s" 对自己开枪
+                        |里面${NumberUtil.intConvertToChs(maxPlayer)}个弹槽只装填了一发子弹
+                        |请加入的群员发送 "s" 对自己开枪
                         |通过的群员不能再次参与本次赌局
                         |被 "禁言子弹" 击中的群员将获得随机禁言套餐！
                     """.trimMargin()
-                        )
-                        i = 0
-                        val bullet = (1..AutoConfig.maxPlayer).random()
-                        GlobalEventChannel.subscribe<GroupMessageEvent> Here@{
-                            if (this.subject == rouGroup) {
-                                if (message.content == "s" && rouletteData[subject]?.contains(sender) == true) {
-                                    i++
-                                    delay(3000)
-                                    when (i) {
-                                        bullet -> {
-                                            rouletteData.remove(subject)
-                                            subject.sendMessage(rouletteOutMessage.random())
-                                            try {
-                                                sender.mute((1..rouletteOutMuteRange).random())
-                                            } catch (e: PermissionDeniedException){
-                                                subject.sendMessage("可惜我没法禁言呢")
-                                            } catch (e: IllegalStateException){
-                                                logger.error { "禁言时间异常！$e" }
-                                            }
-                                            return@Here ListeningStatus.STOPPED
-                                        }
-                                        else -> {
-                                            rouletteData[subject]?.remove(sender)
-                                            subject.sendMessage(roulettePassedMessage.random())
-                                        }
+                )
+                var i = 0
+                val bullet = (1..maxPlayer).random()
+                GlobalEventChannel.subscribe<GroupMessageEvent> Here@{
+                    if (this.subject == rouGroup) {
+                        if (message.content == "s" && rouletteData[subject]?.contains(sender) == false) {
+                            i++
+                            delay(3000)
+                            when (i) {
+                                bullet -> {
+                                    rouletteData.remove(subject)
+                                    subject.sendMessage(rouletteOutMessage.random())
+                                    try {
+                                        sender.mute((1..rouletteOutMuteRange).random())
+                                    } catch (e: PermissionDeniedException) {
+                                        subject.sendMessage("可惜我没法禁言呢")
+                                    } catch (e: IllegalStateException) {
+                                        sender.mute(30)
+                                        logger.error { "禁言时间异常！$e" }
                                     }
+                                    return@Here ListeningStatus.STOPPED
+                                }
+                                else -> {
+                                    rouletteData[subject]?.add(sender)
+                                    subject.sendMessage(AutoConfig.roulettePassedMessage.random())
                                 }
                             }
-                            ListeningStatus.LISTENING
                         }
-                        return@subscribe ListeningStatus.STOPPED
                     }
                     ListeningStatus.LISTENING
                 }
