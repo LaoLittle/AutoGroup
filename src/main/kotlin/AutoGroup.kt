@@ -321,7 +321,39 @@ object AutoGroup : KotlinPlugin(
                     """.trimMargin()
                 )
                 var i = 0
+                var delayTimes = 0
                 val bullet = (1..maxPlayer).random()
+                val calc = object : TimerTask() {
+                    override fun run() {
+                        this@AutoGroup.launch {
+                            delayTimes++
+                            if (delayTimes >= 2) {
+                                subject.sendMessage(
+                                    """
+                           太久没有人动那把枪了
+                           枪的色泽逐渐暗淡
+                        """.trimIndent()
+                                )
+                                rouletteData.remove(subject)
+                                when ((1..4).random()) {
+                                    2 -> {
+                                        val luckyDog = subject.members.random()
+                                        subject.sendMessage("枪走火了！ ${luckyDog.nameCardOrNick} 中枪了！")
+                                        try {
+                                            luckyDog.mute(30)
+                                        } catch (e: PermissionDeniedException) {
+                                            logger.error { "禁言失败！权限不足" }
+                                        }
+                                    }
+                                }
+                                cancel()
+                            }
+                        }
+                    }
+                }
+
+                Timer().schedule(calc, Date(), 30_000)
+
                 GlobalEventChannel.subscribe<GroupMessageEvent> Here@{
                     if (this.subject == rouGroup) {
                         if (message.content == "s" && rouletteData[subject]?.contains(sender) == false) {
@@ -339,10 +371,12 @@ object AutoGroup : KotlinPlugin(
                                         sender.mute(30)
                                         logger.error { "禁言时间异常！$e" }
                                     }
+                                    calc.cancel()
                                     return@Here ListeningStatus.STOPPED
                                 }
                                 else -> {
                                     rouletteData[subject]?.add(sender)
+                                    delayTimes = 0
                                     subject.sendMessage(AutoConfig.roulettePassedMessage.random())
                                 }
                             }
