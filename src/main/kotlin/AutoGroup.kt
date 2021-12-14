@@ -56,7 +56,7 @@ import java.util.*
 object AutoGroup : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.AutoGroup",
-        version = "1.8.9",
+        version = "1.8.10",
         name = "AutoGroup"
     ) {
         author("LaoLittle")
@@ -307,7 +307,7 @@ object AutoGroup : KotlinPlugin(
 
             roulette {
                 if (rouletteData.keys.contains(subject)) {
-                    subject.sendMessage("本群已经开启了一个赌注！")
+                    subject.sendMessage("本群已经开启了一个赌局！")
                     return@roulette
                 }
                 rouletteData[subject] = mutableSetOf()
@@ -381,6 +381,7 @@ object AutoGroup : KotlinPlugin(
                 val bullets = mutableSetOf<Int>()
                 while (bullets.size < bulletNum)
                     bullets.add((1..maxPlayer).random())
+                val lastBullet = Collections.max(bullets)
                 GlobalEventChannel.subscribe<GroupMessageEvent> {
                     if (this.subject == rouGroup) {
                         if (message.content == "s" && rouletteData[subject]?.contains(sender) == false) {
@@ -388,9 +389,9 @@ object AutoGroup : KotlinPlugin(
                             delay(3000)
                             when {
                                 bullets.contains(i) -> {
-                                    rouletteData.remove(subject)
                                     subject.sendMessage(rouletteOutMessage.random())
                                     try {
+                                        subject.sendMessage(Collections.max(bullets).toString())
                                         sender.mute((1..rouletteOutMuteRange).random())
                                     } catch (e: PermissionDeniedException) {
                                         subject.sendMessage("可惜我没法禁言呢")
@@ -398,11 +399,17 @@ object AutoGroup : KotlinPlugin(
                                         sender.mute(30)
                                         logger.error { "禁言时间异常！$e" }
                                     }
-                                    calc.cancel()
-                                    return@subscribe ListeningStatus.STOPPED
+                                    if (i >= lastBullet) {
+                                        rouletteData.remove(subject)
+                                        if (bulletNum >= 1)
+                                            subject.sendMessage("枪里的子弹全部射完了...本次赌局自动结束")
+                                        calc.cancel()
+                                        return@subscribe ListeningStatus.STOPPED
+                                    }
                                 }
                                 else -> {
-                                    if (allowRejoinRoulette)
+                                    // 囸
+                                    if (!allowRejoinRoulette)
                                         rouletteData[subject]?.add(sender)
                                     delayTimes = 0
                                     subject.sendMessage(AutoConfig.roulettePassedMessage.random())
