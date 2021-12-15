@@ -11,7 +11,7 @@ import org.laolittle.plugin.joinorquit.AutoGroup.dataFolder
 
 object Tools {
 
-    suspend fun String.encodeToImageMiraiCode(contact: Contact): String {
+    suspend fun String.encodeImageToMiraiCode(contact: Contact): String {
         var miraiCode = this
         while (miraiCode.contains("%图")) {
             val startIndex = miraiCode.indexOf("%图")

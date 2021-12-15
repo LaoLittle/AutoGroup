@@ -50,8 +50,8 @@ import org.laolittle.plugin.joinorquit.AutoConfig.yinglishCommand
 import org.laolittle.plugin.joinorquit.model.CacheClear
 import org.laolittle.plugin.joinorquit.model.PatPatTool.getPat
 import org.laolittle.plugin.joinorquit.utils.NumberUtil.intConvertToChs
+import org.laolittle.plugin.joinorquit.utils.Tools.encodeImageToMiraiCode
 import org.laolittle.plugin.joinorquit.utils.Tools.encodeToAudio
-import org.laolittle.plugin.joinorquit.utils.Tools.encodeToImageMiraiCode
 import org.laolittle.plugin.joinorquit.utils.Tools.encodeToMiraiCode
 import org.laolittle.plugin.joinorquit.utils.Tools.getYinglishNode
 import java.io.File
@@ -135,7 +135,9 @@ object AutoGroup : KotlinPlugin(
         }
 
         GlobalEventChannel.filter { memberMutedMessage.isNotEmpty() && botOperatedMuteMessage.isNotEmpty() }
-            .subscribeAlways<MemberMuteEvent> {
+            .subscribeAlways<MemberMuteEvent>(
+                priority = EventPriority.LOWEST
+            ) {
                 val msg = if (operatorOrBot == group.botAsMember) botOperatedMuteMessage
                     .replace("%主动%", operatorOrBot.nameCardOrNick)
                     .encodeToMiraiCode(member, false)
@@ -147,7 +149,9 @@ object AutoGroup : KotlinPlugin(
             }
 
         GlobalEventChannel.filter { memberUnmuteMessage.isNotEmpty() && botOperatedUnmuteMessage.isNotEmpty() }
-            .subscribeAlways<MemberUnmuteEvent> {
+            .subscribeAlways<MemberUnmuteEvent>(
+                priority = EventPriority.LOWEST
+            ) {
                 val msg = if (operatorOrBot == group.botAsMember) botOperatedUnmuteMessage
                     .replace("%主动%", operatorOrBot.nameCardOrNick)
                     .encodeToMiraiCode(member, false)
@@ -197,7 +201,7 @@ object AutoGroup : KotlinPlugin(
 
         GlobalEventChannel.filter { nudgedReply.isNotEmpty() }.subscribeAlways<NudgeEvent> {
             if (target == bot) {
-                val msg = when ((1..100).random()) {
+                when ((1..100).random()) {
                     in 1..counterNudge -> {
                         when ((1..100).random()) {
                             in 1..superNudge -> {
@@ -213,7 +217,7 @@ object AutoGroup : KotlinPlugin(
                                     }
                                 }
                                 delay(1000)
-                                PlainText(superNudgeMessage)
+                                subject.sendMessage(superNudgeMessage)
                             }
                             else -> {
                                 if (counterNudgeMessage.isNotEmpty())
@@ -229,20 +233,19 @@ object AutoGroup : KotlinPlugin(
                                     logger.info { "当前使用协议为不支持的协议，改用Poke戳一戳" }
                                     subject.sendMessage(PokeMessage.ChuoYiChuo)
                                 }
-                                PlainText(counterNudgeCompleteMessage.random())
+                                delay(1000)
+                                if (counterNudgeCompleteMessage.isNotEmpty()) subject.sendMessage(counterNudgeCompleteMessage.random())
                             }
                         }
                     }
                     else -> {
                         val nudgedPerReply = nudgedReply.random()
-                        if (nudgedPerReply.contains("%音")) {
-                            nudgedPerReply.encodeToAudio(subject as AudioSupported)
+                        if (nudgedPerReply.contains("%声")) {
+                            nudgedPerReply.encodeToAudio(subject as AudioSupported).sendTo(subject)
                         }else
-                        nudgedReply.random().encodeToImageMiraiCode(subject).deserializeMiraiCode()
+                        subject.sendMessage(nudgedReply.random().encodeImageToMiraiCode(subject).deserializeMiraiCode())
                     }
                 }
-                delay(1000)
-                subject.sendMessage(msg)
             }
         }
 
@@ -269,7 +272,9 @@ object AutoGroup : KotlinPlugin(
          * party ( 暂未做完 ) 派对模式！
          * Roulette 轮盘赌注
          * */
-        GlobalEventChannel.subscribeGroupMessages {
+        GlobalEventChannel.subscribeGroupMessages(
+            priority = EventPriority.LOW
+        ) {
             startsWith("allinall") { msg ->
                 if (msg == "") return@startsWith
                 val memberFake = buildForwardMessage {
@@ -424,6 +429,7 @@ object AutoGroup : KotlinPlugin(
                                         subject.sendMessage("枪走火了！ ${luckyDog.nameCardOrNick} 中枪了！")
                                         try {
                                             luckyDog.mute(30)
+                                            intercept()
                                         } catch (e: PermissionDeniedException) {
                                             logger.error { "禁言失败！权限不足" }
                                         }
@@ -451,6 +457,7 @@ object AutoGroup : KotlinPlugin(
                                     subject.sendMessage(rouletteOutMessage.random())
                                     try {
                                         sender.mute((1..rouletteOutMuteRange).random())
+                                        intercept()
                                     } catch (e: PermissionDeniedException) {
                                         subject.sendMessage("可惜我没法禁言呢")
                                     } catch (e: IllegalStateException) {
@@ -470,6 +477,8 @@ object AutoGroup : KotlinPlugin(
                                     if (!allowRejoinRoulette)
                                         rouletteData[subject]?.add(sender)
                                     delayTimes = 0
+                                    calc.cancel()
+                                    Timer().schedule(calc, Date(), 120_000)
                                     subject.sendMessage(AutoConfig.roulettePassedMessage.random())
                                 }
                             }

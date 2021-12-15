@@ -36,7 +36,7 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     )
 
     @ValueDescription("戳一戳触发反击的概率百分比(%)")
-    val counterNudge: Int by value(30)
+    val counterNudge: Int by value(20)
 
     @ValueDescription("戳一戳触发反击的回复消息")
     val counterNudgeMessage: Set<String> by value(setOf("戳回去(￣ ‘i ￣;)"))
