@@ -1,19 +1,32 @@
 package org.laolittle.plugin.joinorquit.utils
 
+import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.contact.User
+import net.mamoe.mirai.utils.ExternalResource.Companion.uploadAsImage
 import org.laolittle.plugin.joinorquit.AutoConfig.yinLevel
+import org.laolittle.plugin.joinorquit.AutoGroup.dataFolder
 
 object Tools {
 
+    suspend fun String.encodeToImageMiraiCode(contact: Contact): String{
+        var miraiCode = this
+        while (miraiCode.contains("%图")){
+            val startIndex = miraiCode.indexOf("%图")
+            val filePath = miraiCode.substring(startIndex+2, miraiCode.indexOf("%", startIndex+3))
+            val imageCode = dataFolder.resolve(filePath).uploadAsImage(contact).serializeToMiraiCode()
+            miraiCode = miraiCode.replace("%图$filePath%", imageCode)
+        }
+        return miraiCode
+    }
+
     fun String.encodeToMiraiCode(initiative: User, passive: User): String {
-        return this
-            .replace("%主动%", "[mirai:at:${initiative.id}]")
+        return replace("%主动%", "[mirai:at:${initiative.id}]")
             .replace("%被动%", "[mirai:at:${passive.id}]")
     }
 
     fun String.encodeToMiraiCode(user: User, initiative: Boolean): String {
-        return if (initiative) this.replace("%主动%", "[mirai:at:${user.id}]")
-        else this.replace("%被动%", "[mirai:at:${user.id}]")
+        return if (initiative) replace("%主动%", "[mirai:at:${user.id}]")
+        else replace("%被动%", "[mirai:at:${user.id}]")
     }
 
     fun getYinglishNode(wordChars: CharArray, part: String?): String {
