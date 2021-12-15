@@ -6,13 +6,23 @@ import net.mamoe.mirai.console.data.value
 
 object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     @ValueDescription("戳一戳的时间间隔(单位: 分)")
-    val nudgeMin: Long by value(30L)
+    val nudgeMin: Long by value(60L)
+
+    @ValueDescription("""
+        新人入群欢迎提示语
+        为空则不欢迎
+        """)
+    val newMemberJoinMessage: Set<String> by value(setOf("欢淫", "欢迎"))
+
+    @ValueDescription("新人入群摸头")
+    val newMemberJoinPat: Boolean by value(true)
 
     @ValueDescription(
         """
         Bot 被戳时的回复
         可任意按照格式添加
         当戳一戳未触发反击时便随机选取列表中的消息发送
+        为空时不开启
         """
     )
     val nudgedReply: Set<String> by value(
@@ -29,7 +39,10 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     val counterNudge: Int by value(30)
 
     @ValueDescription("戳一戳触发反击的回复消息")
-    val counterNudgeMessage: String by value("戳回去(￣ ‘i ￣;)")
+    val counterNudgeMessage: Set<String> by value(setOf("戳回去(￣ ‘i ￣;)"))
+
+    @ValueDescription("戳一戳反击结束语")
+    val counterNudgeCompleteMessage: Set<String> by value(setOf("哼", "切"))
 
     @ValueDescription("触发戳一戳超级加倍的概率 (仅触发反击时)")
     val superNudge: Int by value(15)
