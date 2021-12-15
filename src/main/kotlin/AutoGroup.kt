@@ -26,12 +26,15 @@ import org.laolittle.plugin.joinorquit.AutoConfig.botOperatedMuteMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.botOperatedUnmuteMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.botUnmuteMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.counterNudge
+import org.laolittle.plugin.joinorquit.AutoConfig.counterNudgeCompleteMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.counterNudgeMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.groupMuteAllRelease
 import org.laolittle.plugin.joinorquit.AutoConfig.kickMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.maxPlayer
 import org.laolittle.plugin.joinorquit.AutoConfig.memberMutedMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.memberUnmuteMessage
+import org.laolittle.plugin.joinorquit.AutoConfig.newMemberJoinMessage
+import org.laolittle.plugin.joinorquit.AutoConfig.newMemberJoinPat
 import org.laolittle.plugin.joinorquit.AutoConfig.nudgeMin
 import org.laolittle.plugin.joinorquit.AutoConfig.nudgedReply
 import org.laolittle.plugin.joinorquit.AutoConfig.quitMessage
@@ -47,6 +50,7 @@ import org.laolittle.plugin.joinorquit.AutoConfig.yinglishCommand
 import org.laolittle.plugin.joinorquit.model.CacheClear
 import org.laolittle.plugin.joinorquit.model.PatPatTool.getPat
 import org.laolittle.plugin.joinorquit.utils.NumberUtil.intConvertToChs
+import org.laolittle.plugin.joinorquit.utils.Tools.encodeToImageMiraiCode
 import org.laolittle.plugin.joinorquit.utils.Tools.encodeToMiraiCode
 import org.laolittle.plugin.joinorquit.utils.Tools.getYinglishNode
 import java.io.File
@@ -56,7 +60,7 @@ import java.util.*
 object AutoGroup : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.AutoGroup",
-        version = "1.8.10",
+        version = "1.9.2",
         name = "AutoGroup"
     ) {
         author("LaoLittle")
@@ -74,11 +78,11 @@ object AutoGroup : KotlinPlugin(
         val onEnable: MutableSet<Long> = mutableSetOf()
         val onYinable: MutableSet<Long> = mutableSetOf()
         val rouletteData: MutableMap<Group, MutableSet<User>> = mutableMapOf()
-        val nudgePerm = this.registerPermission("timer.nudge", "每隔${nudgeMin}分钟戳一戳")
+        val nudgePerm = this.registerPermission("timer.nudge", if (nudgeMin > 0) "每隔${nudgeMin}分钟戳一戳" else "配置文件错误，请前往配置文件设置nudgeMin大于0")
 
         logger.info { "开始折磨群友" }
 
-        GlobalEventChannel.subscribeOnce<BotOnlineEvent> {
+        GlobalEventChannel.filter { nudgeMin > 0 }.subscribeOnce<BotOnlineEvent> {
             val nudgeTimer = object : TimerTask() {
                 override fun run() {
                     this@AutoGroup.launch {
@@ -108,10 +112,12 @@ object AutoGroup : KotlinPlugin(
             } else group.sendMessage(At(previous) + PlainText(" 的龙王被") + At(now) + PlainText(" 抢走了，好可怜"))
         }
 
-        GlobalEventChannel.subscribeAlways<MemberJoinEvent> {
-            group.sendMessage("欢淫")
-            getPat(member, 80)
-            group.sendImage(File("$dataFolder/tmp").resolve("${member.id}_pat.gif"))
+        GlobalEventChannel.filter { newMemberJoinMessage.isNotEmpty() }.subscribeAlways<MemberJoinEvent> {
+            group.sendMessage(newMemberJoinMessage.random())
+        if (newMemberJoinPat)    {
+                getPat(member, 80)
+                group.sendImage(File("$dataFolder/tmp").resolve("${member.id}_pat.gif"))
+            }
         }
 
         GlobalEventChannel.filter { kickMessage.isNotEmpty() }.subscribeAlways<MemberLeaveEvent.Kick> {
@@ -193,18 +199,21 @@ object AutoGroup : KotlinPlugin(
                             in 1..superNudge -> {
                                 repeat(superNudgeTimes) {
                                     try {
-                                        if (!from.nudge().sendTo(subject))
+                                        if (!from.nudge().sendTo(subject)) {
                                             subject.sendMessage(PokeMessage.ChuoYiChuo)
+                                            return@repeat
+                                        }
                                     } catch (e: UnsupportedOperationException) {
                                         subject.sendMessage(PokeMessage.ChuoYiChuo)
+                                        return@repeat
                                     }
                                 }
                                 delay(1000)
                                 superNudgeMessage
                             }
                             else -> {
-                                if (counterNudgeMessage != "")
-                                    subject.sendMessage(counterNudgeMessage)
+                                if (counterNudgeMessage.isNotEmpty())
+                                    subject.sendMessage(counterNudgeMessage.random())
                                 delay(1000)
                                 try {
                                     if (!from.nudge().sendTo(subject)) {
@@ -216,14 +225,16 @@ object AutoGroup : KotlinPlugin(
                                     logger.info { "当前使用协议为不支持的协议，改用Poke戳一戳" }
                                     subject.sendMessage(PokeMessage.ChuoYiChuo)
                                 }
-                                "哼"
+                                counterNudgeCompleteMessage.random()
                             }
                         }
                     }
-                    else -> nudgedReply.random()
+                    else -> nudgedReply.random().encodeToImageMiraiCode(subject)
                 }
                 delay(1000)
-                subject.sendMessage(msg)
+                try {
+                    subject.sendMessage(msg.deserializeMiraiCode())
+                }catch (_: IllegalArgumentException){}
             }
         }
 
@@ -244,20 +255,57 @@ object AutoGroup : KotlinPlugin(
         /**
          * 一些小功能
          * 目前加入:
-         * allinall 总之就是假消息
+         * inall 总之就是假消息
          * yinglish 淫语翻译姬！✩
          * 天弃之子 随机禁言
          * party ( 暂未做完 ) 派对模式！
          * Roulette 轮盘赌注
          * */
         GlobalEventChannel.subscribeGroupMessages {
-            startsWith("allinall") {
+            startsWith("allinall"){ msg ->
+                if (msg == "") return@startsWith
+                val memberFake = buildForwardMessage {
+                    when(subject.members.size){
+                        in 1..100 -> {
+                            subject.members.forEach {
+                                add(it, PlainText(msg))
+                            }
+                        }
+                        else -> {
+                            val members = mutableSetOf<Member>()
+                            while (members.size < 100){
+                                members.add(subject.members.random())
+                            }
+                            members.forEach {
+                                add(it, PlainText(msg))
+                            }
+                        }
+                    }
+                }
+                subject.sendMessage(memberFake)
+            }
+
+            startsWith("randominall") {
                 if (it == "") return@startsWith
                 val msg = buildForwardMessage {
                     val randomMember = subject.members.random()
                     add(randomMember, PlainText(it))
                 }
                 subject.sendMessage(msg)
+            }
+
+            // [mirai:at:123]
+            startsWith("oneinall"){
+                if (it == "") return@startsWith
+                val miraiCode = message.serializeToMiraiCode()
+                val fakeMessage = miraiCode.substring(miraiCode.indexOf("]") + 1)
+                if (fakeMessage == "") return@startsWith
+                val miraiCodeBegin = "[mirai:at:"
+                val targetId = miraiCode.substring(miraiCode.indexOf(miraiCodeBegin) + miraiCodeBegin.length, miraiCode.indexOf("]"))
+
+                subject.sendMessage(buildForwardMessage {
+                    subject[targetId.toLong()]?.let { target -> add(target, PlainText(fakeMessage)) }
+                })
             }
 
             yinglishCommand {
@@ -391,7 +439,6 @@ object AutoGroup : KotlinPlugin(
                                 bullets.contains(i) -> {
                                     subject.sendMessage(rouletteOutMessage.random())
                                     try {
-                                        subject.sendMessage(Collections.max(bullets).toString())
                                         sender.mute((1..rouletteOutMuteRange).random())
                                     } catch (e: PermissionDeniedException) {
                                         subject.sendMessage("可惜我没法禁言呢")
