@@ -50,6 +50,7 @@ import org.laolittle.plugin.joinorquit.AutoConfig.yinglishCommand
 import org.laolittle.plugin.joinorquit.model.CacheClear
 import org.laolittle.plugin.joinorquit.model.PatPatTool.getPat
 import org.laolittle.plugin.joinorquit.utils.NumberUtil.intConvertToChs
+import org.laolittle.plugin.joinorquit.utils.Tools.encodeToAudio
 import org.laolittle.plugin.joinorquit.utils.Tools.encodeToImageMiraiCode
 import org.laolittle.plugin.joinorquit.utils.Tools.encodeToMiraiCode
 import org.laolittle.plugin.joinorquit.utils.Tools.getYinglishNode
@@ -78,7 +79,10 @@ object AutoGroup : KotlinPlugin(
         val onEnable: MutableSet<Long> = mutableSetOf()
         val onYinable: MutableSet<Long> = mutableSetOf()
         val rouletteData: MutableMap<Group, MutableSet<User>> = mutableMapOf()
-        val nudgePerm = this.registerPermission("timer.nudge", if (nudgeMin > 0) "每隔${nudgeMin}分钟戳一戳" else "配置文件错误，请前往配置文件设置nudgeMin大于0")
+        val nudgePerm = this.registerPermission(
+            "timer.nudge",
+            if (nudgeMin > 0) "每隔${nudgeMin}分钟戳一戳" else "配置文件错误，请前往配置文件设置nudgeMin大于0"
+        )
 
         logger.info { "开始折磨群友" }
 
@@ -114,7 +118,7 @@ object AutoGroup : KotlinPlugin(
 
         GlobalEventChannel.filter { newMemberJoinMessage.isNotEmpty() }.subscribeAlways<MemberJoinEvent> {
             group.sendMessage(newMemberJoinMessage.random())
-        if (newMemberJoinPat)    {
+            if (newMemberJoinPat) {
                 getPat(member, 80)
                 group.sendImage(File("$dataFolder/tmp").resolve("${member.id}_pat.gif"))
             }
@@ -209,7 +213,7 @@ object AutoGroup : KotlinPlugin(
                                     }
                                 }
                                 delay(1000)
-                                superNudgeMessage
+                                PlainText(superNudgeMessage)
                             }
                             else -> {
                                 if (counterNudgeMessage.isNotEmpty())
@@ -225,16 +229,20 @@ object AutoGroup : KotlinPlugin(
                                     logger.info { "当前使用协议为不支持的协议，改用Poke戳一戳" }
                                     subject.sendMessage(PokeMessage.ChuoYiChuo)
                                 }
-                                counterNudgeCompleteMessage.random()
+                                PlainText(counterNudgeCompleteMessage.random())
                             }
                         }
                     }
-                    else -> nudgedReply.random().encodeToImageMiraiCode(subject)
+                    else -> {
+                        val nudgedPerReply = nudgedReply.random()
+                        if (nudgedPerReply.contains("%音")) {
+                            nudgedPerReply.encodeToAudio(subject as AudioSupported)
+                        }else
+                        nudgedReply.random().encodeToImageMiraiCode(subject).deserializeMiraiCode()
+                    }
                 }
                 delay(1000)
-                try {
-                    subject.sendMessage(msg.deserializeMiraiCode())
-                }catch (_: IllegalArgumentException){}
+                subject.sendMessage(msg)
             }
         }
 
@@ -262,10 +270,10 @@ object AutoGroup : KotlinPlugin(
          * Roulette 轮盘赌注
          * */
         GlobalEventChannel.subscribeGroupMessages {
-            startsWith("allinall"){ msg ->
+            startsWith("allinall") { msg ->
                 if (msg == "") return@startsWith
                 val memberFake = buildForwardMessage {
-                    when(subject.members.size){
+                    when (subject.members.size) {
                         in 1..100 -> {
                             subject.members.forEach {
                                 add(it, PlainText(msg))
@@ -273,7 +281,7 @@ object AutoGroup : KotlinPlugin(
                         }
                         else -> {
                             val members = mutableSetOf<Member>()
-                            while (members.size < 100){
+                            while (members.size < 100) {
                                 members.add(subject.members.random())
                             }
                             members.forEach {
@@ -295,13 +303,16 @@ object AutoGroup : KotlinPlugin(
             }
 
             // [mirai:at:123]
-            startsWith("oneinall"){
+            startsWith("oneinall") {
                 if (it == "") return@startsWith
                 val miraiCode = message.serializeToMiraiCode()
                 val fakeMessage = miraiCode.substring(miraiCode.indexOf("]") + 1)
                 if (fakeMessage == "") return@startsWith
                 val miraiCodeBegin = "[mirai:at:"
-                val targetId = miraiCode.substring(miraiCode.indexOf(miraiCodeBegin) + miraiCodeBegin.length, miraiCode.indexOf("]"))
+                val targetId = miraiCode.substring(
+                    miraiCode.indexOf(miraiCodeBegin) + miraiCodeBegin.length,
+                    miraiCode.indexOf("]")
+                )
 
                 subject.sendMessage(buildForwardMessage {
                     subject[targetId.toLong()]?.let { target -> add(target, PlainText(fakeMessage)) }
@@ -367,14 +378,14 @@ object AutoGroup : KotlinPlugin(
                 })
                 var bulletNum = 1
                 whileSelectMessages {
-                    default {msg ->
+                    default { msg ->
                         if (Regex("""\D""").containsMatchIn(msg))
                             subject.sendMessage("请输入数字 !")
                         else if ((msg.toInt() > maxPlayer) or (msg.toInt() <= 0))
                             subject.sendMessage("请输入正确的数字 !")
                         else {
                             bulletNum = msg.toInt()
-                                return@default false
+                            return@default false
                         }
                         true
                     }

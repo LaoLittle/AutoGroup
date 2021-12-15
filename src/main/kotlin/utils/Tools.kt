@@ -1,22 +1,32 @@
 package org.laolittle.plugin.joinorquit.utils
 
+import net.mamoe.mirai.contact.AudioSupported
 import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.contact.User
+import net.mamoe.mirai.message.data.OfflineAudio
+import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import net.mamoe.mirai.utils.ExternalResource.Companion.uploadAsImage
 import org.laolittle.plugin.joinorquit.AutoConfig.yinLevel
 import org.laolittle.plugin.joinorquit.AutoGroup.dataFolder
 
 object Tools {
 
-    suspend fun String.encodeToImageMiraiCode(contact: Contact): String{
+    suspend fun String.encodeToImageMiraiCode(contact: Contact): String {
         var miraiCode = this
-        while (miraiCode.contains("%图")){
+        while (miraiCode.contains("%图")) {
             val startIndex = miraiCode.indexOf("%图")
-            val filePath = miraiCode.substring(startIndex+2, miraiCode.indexOf("%", startIndex+3))
+            val filePath = miraiCode.substring(startIndex + 2, miraiCode.indexOf("%", startIndex + 3))
             val imageCode = dataFolder.resolve(filePath).uploadAsImage(contact).serializeToMiraiCode()
             miraiCode = miraiCode.replace("%图$filePath%", imageCode)
         }
         return miraiCode
+    }
+
+    suspend fun String.encodeToAudio(contact: AudioSupported): OfflineAudio {
+        val audioCode = this
+        val startIndex = audioCode.indexOf("%声")
+        val filePath = audioCode.substring(startIndex + 2, audioCode.indexOf("%", startIndex + 3))
+        return dataFolder.resolve(filePath).toExternalResource().use { contact.uploadAudio(it) }
     }
 
     fun String.encodeToMiraiCode(initiative: User, passive: User): String {
