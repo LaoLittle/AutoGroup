@@ -18,7 +18,7 @@ class CacheClear : TimerTask() {
         val tmp = File("${AutoGroup.dataFolder}/tmp")
         when (if (tmp.exists()) tmp.deleteRecursively() else null) {
             true -> AutoGroup.logger.info { "缓存已自动清理" }
-            false -> AutoGroup.logger.info { "缓存清理失败" }
+            else -> AutoGroup.logger.info { "缓存清理失败" }
         }
     }
 }
