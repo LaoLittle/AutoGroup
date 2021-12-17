@@ -1,5 +1,5 @@
 plugins {
-    val kotlinVersion = "1.6.0"
+    val kotlinVersion = "1.6.10"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
 
@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "org.laolittle.plugin.joinorquit"
-version = "1.9.2"
+version = "1.9.4"
 
 repositories {
     maven("https://maven.aliyun.com/repository/public")

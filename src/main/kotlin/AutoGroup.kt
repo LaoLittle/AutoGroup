@@ -61,7 +61,7 @@ import java.util.*
 object AutoGroup : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.AutoGroup",
-        version = "1.9.2",
+        version = "1.9.4",
         name = "AutoGroup"
     ) {
         author("LaoLittle")
@@ -410,7 +410,7 @@ object AutoGroup : KotlinPlugin(
                 )
                 var i = 0
                 var delayTimes = 0
-                val calc = object : TimerTask() {
+                class Roulette : TimerTask() {
                     override fun run() {
                         this@AutoGroup.launch {
                             delayTimes++
@@ -440,6 +440,37 @@ object AutoGroup : KotlinPlugin(
                         }
                     }
                 }
+                var calc = Roulette()
+                /*object : TimerTask() {
+                    override fun run() {
+                        this@AutoGroup.launch {
+                            delayTimes++
+                            if (delayTimes >= 2) {
+                                subject.sendMessage(
+                                    """
+                           许久没有人动那把枪了
+                           枪的色泽逐渐暗淡
+                        """.trimIndent()
+                                )
+                                rouletteData.remove(subject)
+                                when ((1..4).random()) {
+                                    2 -> {
+                                        val luckyDog = subject.members.random()
+                                        subject.sendMessage(rouletteOutMessage.random())
+                                        subject.sendMessage("枪走火了！ ${luckyDog.nameCardOrNick} 中枪了！")
+                                        try {
+                                            luckyDog.mute(30)
+                                            intercept()
+                                        } catch (e: PermissionDeniedException) {
+                                            logger.error { "禁言失败！权限不足" }
+                                        }
+                                    }
+                                }
+                                cancel()
+                            }
+                        }
+                    }
+                }*/
 
                 Timer().schedule(calc, Date(), 120_000)
 
@@ -478,6 +509,7 @@ object AutoGroup : KotlinPlugin(
                                         rouletteData[subject]?.add(sender)
                                     delayTimes = 0
                                     calc.cancel()
+                                    calc = Roulette()
                                     Timer().schedule(calc, Date(), 120_000)
                                     subject.sendMessage(AutoConfig.roulettePassedMessage.random())
                                 }
@@ -493,6 +525,22 @@ object AutoGroup : KotlinPlugin(
                     sender.nudge().sendTo(subject)
                 }
             }
+        }
+
+        GlobalEventChannel.subscribeFriendMessages {
+       /*   "心灵控制" {
+                subject.sendMessage("请发送你需要转换的聊天记录")
+                whileSelectMessages {
+                    default {
+                        if (message.toForwardMessage() is ForwardMessage)
+                            true
+                        true
+                    }
+                }
+            }
+
+        */
+
         }
     }
 
