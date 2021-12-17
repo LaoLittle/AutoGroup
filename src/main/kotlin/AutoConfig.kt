@@ -8,10 +8,12 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     @ValueDescription("戳一戳的时间间隔(单位: 分)")
     val nudgeMin: Long by value(60L)
 
-    @ValueDescription("""
+    @ValueDescription(
+        """
         新人入群欢迎提示语
         为空则不欢迎
-        """)
+        """
+    )
     val newMemberJoinMessage: Set<String> by value(setOf("欢淫", "欢迎"))
 
     @ValueDescription("新人入群摸头")
@@ -148,6 +150,9 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
 
     @ValueDescription("轮盘赌注是否允许重复加入")
     val allowRejoinRoulette: Boolean by value(false)
+
+    @ValueDescription("祖安问候家人")
+    val maxZuanLevel: Boolean by value(false)
 
 /*
     @ValueDescription("是否在禁言期间持续发送消息给操作人以及发送的消息")
