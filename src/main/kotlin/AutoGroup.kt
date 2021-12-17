@@ -4,6 +4,7 @@ import com.huaban.analysis.jieba.JiebaSegmenter
 import com.huaban.analysis.jieba.WordDictionary
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
 import net.mamoe.mirai.console.permission.Permission
 import net.mamoe.mirai.console.permission.PermissionService
 import net.mamoe.mirai.console.permission.PermissionService.Companion.testPermission
@@ -47,6 +48,7 @@ import org.laolittle.plugin.joinorquit.AutoConfig.superNudgeMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.superNudgeTimes
 import org.laolittle.plugin.joinorquit.AutoConfig.tenkiNiNokoSaReTaKo
 import org.laolittle.plugin.joinorquit.AutoConfig.yinglishCommand
+import org.laolittle.plugin.joinorquit.command.Zuan
 import org.laolittle.plugin.joinorquit.model.CacheClear
 import org.laolittle.plugin.joinorquit.model.PatPatTool.getPat
 import org.laolittle.plugin.joinorquit.utils.NumberUtil.intConvertToChs
@@ -61,7 +63,7 @@ import java.util.*
 object AutoGroup : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.AutoGroup",
-        version = "1.9.4",
+        version = "1.9.5",
         name = "AutoGroup"
     ) {
         author("LaoLittle")
@@ -73,6 +75,7 @@ object AutoGroup : KotlinPlugin(
         val osName = System.getProperties().getProperty("os.name")
         if (!osName.startsWith("Windows")) System.setProperty("java.awt.headless", "true")
         AutoConfig.reload()
+        Zuan.register()
         val cacheClear = CacheClear()
         Timer().schedule(cacheClear, Date(), 60 * 30 * 1000)
         val lastMessage: MutableMap<Long, String> = mutableMapOf()
@@ -234,7 +237,9 @@ object AutoGroup : KotlinPlugin(
                                     subject.sendMessage(PokeMessage.ChuoYiChuo)
                                 }
                                 delay(1000)
-                                if (counterNudgeCompleteMessage.isNotEmpty()) subject.sendMessage(counterNudgeCompleteMessage.random())
+                                if (counterNudgeCompleteMessage.isNotEmpty()) subject.sendMessage(
+                                    counterNudgeCompleteMessage.random()
+                                )
                             }
                         }
                     }
@@ -242,8 +247,10 @@ object AutoGroup : KotlinPlugin(
                         val nudgedPerReply = nudgedReply.random()
                         if (nudgedPerReply.contains("%声")) {
                             nudgedPerReply.encodeToAudio(subject as AudioSupported).sendTo(subject)
-                        }else
-                        subject.sendMessage(nudgedReply.random().encodeImageToMiraiCode(subject).deserializeMiraiCode())
+                        } else
+                            subject.sendMessage(
+                                nudgedReply.random().encodeImageToMiraiCode(subject).deserializeMiraiCode()
+                            )
                     }
                 }
             }
@@ -410,6 +417,7 @@ object AutoGroup : KotlinPlugin(
                 )
                 var i = 0
                 var delayTimes = 0
+
                 class Roulette : TimerTask() {
                     override fun run() {
                         this@AutoGroup.launch {
@@ -440,37 +448,8 @@ object AutoGroup : KotlinPlugin(
                         }
                     }
                 }
+
                 var calc = Roulette()
-                /*object : TimerTask() {
-                    override fun run() {
-                        this@AutoGroup.launch {
-                            delayTimes++
-                            if (delayTimes >= 2) {
-                                subject.sendMessage(
-                                    """
-                           许久没有人动那把枪了
-                           枪的色泽逐渐暗淡
-                        """.trimIndent()
-                                )
-                                rouletteData.remove(subject)
-                                when ((1..4).random()) {
-                                    2 -> {
-                                        val luckyDog = subject.members.random()
-                                        subject.sendMessage(rouletteOutMessage.random())
-                                        subject.sendMessage("枪走火了！ ${luckyDog.nameCardOrNick} 中枪了！")
-                                        try {
-                                            luckyDog.mute(30)
-                                            intercept()
-                                        } catch (e: PermissionDeniedException) {
-                                            logger.error { "禁言失败！权限不足" }
-                                        }
-                                    }
-                                }
-                                cancel()
-                            }
-                        }
-                    }
-                }*/
 
                 Timer().schedule(calc, Date(), 120_000)
 
@@ -528,18 +507,18 @@ object AutoGroup : KotlinPlugin(
         }
 
         GlobalEventChannel.subscribeFriendMessages {
-       /*   "心灵控制" {
-                subject.sendMessage("请发送你需要转换的聊天记录")
-                whileSelectMessages {
-                    default {
-                        if (message.toForwardMessage() is ForwardMessage)
-                            true
-                        true
-                    }
-                }
-            }
+            /*   "心灵控制" {
+                     subject.sendMessage("请发送你需要转换的聊天记录")
+                     whileSelectMessages {
+                         default {
+                             if (message.toForwardMessage() is ForwardMessage)
+                                 true
+                             true
+                         }
+                     }
+                 }
 
-        */
+             */
 
         }
     }
