@@ -279,9 +279,7 @@ object AutoGroup : KotlinPlugin(
          * party ( 暂未做完 ) 派对模式！
          * Roulette 轮盘赌注
          * */
-        GlobalEventChannel.subscribeGroupMessages(
-            priority = EventPriority.LOW
-        ) {
+        GlobalEventChannel.subscribeGroupMessages {
             startsWith("allinall") { msg ->
                 if (msg == "") return@startsWith
                 val memberFake = buildForwardMessage {

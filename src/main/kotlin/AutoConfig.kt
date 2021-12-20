@@ -154,6 +154,9 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     @ValueDescription("祖安问候家人")
     val maxZuanLevel: Boolean by value(false)
 
+    @ValueDescription("祖安次数超限回复")
+    val outOfLimitation: String by value("我才不会骂你那么多次啦！")
+
 /*
     @ValueDescription("是否在禁言期间持续发送消息给操作人以及发送的消息")
     val keepSendMessageWhenMuted: Boolean by value(false)

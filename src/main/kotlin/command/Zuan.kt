@@ -7,6 +7,7 @@ import net.mamoe.mirai.console.util.ConsoleExperimentalApi
 import net.mamoe.mirai.message.data.At
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.utils.info
+import org.laolittle.plugin.joinorquit.AutoConfig
 import org.laolittle.plugin.joinorquit.AutoGroup
 import org.laolittle.plugin.joinorquit.utils.KtorHttpUtil
 
@@ -21,10 +22,14 @@ object Zuan : SimpleCommand(
     @Handler
     suspend fun CommandSender.handle(times: Int = 1) {
         val inTimes: Int = if (times <= 1) 1 else times
-        if (inTimes >= 5) { return }
-        val realSender = user
-        if (realSender != null)
-        repeat(inTimes) { subject?.sendMessage( At(realSender).plus(PlainText(KtorHttpUtil.getZuan())))}
-        else repeat(inTimes) { AutoGroup.logger.info { KtorHttpUtil.getZuan() } }
+        if (inTimes >= 5) {
+            subject?.sendMessage(AutoConfig.outOfLimitation)
+                ?: AutoGroup.logger.info { AutoConfig.outOfLimitation }
+            return
+        }
+        repeat(inTimes) {
+            subject?.sendMessage(At(user!!).plus(PlainText(KtorHttpUtil.getZuan())))
+                ?: AutoGroup.logger.info { KtorHttpUtil.getZuan() }
+        }
     }
 }
