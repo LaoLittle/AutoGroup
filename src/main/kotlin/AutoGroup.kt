@@ -48,6 +48,8 @@ import org.laolittle.plugin.joinorquit.AutoConfig.superNudgeMessage
 import org.laolittle.plugin.joinorquit.AutoConfig.superNudgeTimes
 import org.laolittle.plugin.joinorquit.AutoConfig.tenkiNiNokoSaReTaKo
 import org.laolittle.plugin.joinorquit.AutoConfig.yinglishCommand
+import org.laolittle.plugin.joinorquit.GroupList.enable
+import org.laolittle.plugin.joinorquit.command.AutoGroupCtr
 import org.laolittle.plugin.joinorquit.command.Zuan
 import org.laolittle.plugin.joinorquit.model.CacheClear
 import org.laolittle.plugin.joinorquit.model.PatPatTool.getPat
@@ -72,12 +74,7 @@ object AutoGroup : KotlinPlugin(
 ) {
     @OptIn(MiraiExperimentalApi::class)
     override fun onEnable() {
-        val osName = System.getProperties().getProperty("os.name")
-        if (!osName.startsWith("Windows")) System.setProperty("java.awt.headless", "true")
-        AutoConfig.reload()
-        Zuan.register()
-        val cacheClear = CacheClear()
-        Timer().schedule(cacheClear, Date(), 60 * 30 * 1000)
+        init()
         val lastMessage: MutableMap<Long, String> = mutableMapOf()
         val onEnable: MutableSet<Long> = mutableSetOf()
         val onYinable: MutableSet<Long> = mutableSetOf()
@@ -110,6 +107,7 @@ object AutoGroup : KotlinPlugin(
         }
 
         GlobalEventChannel.subscribeAlways<GroupTalkativeChangeEvent> {
+            if (!group.enable()) return@subscribeAlways
             if (previous.id == bot.id) {
                 group.sendMessage("我的龙王被抢走了...")
                 delay(2000)
@@ -120,6 +118,7 @@ object AutoGroup : KotlinPlugin(
         }
 
         GlobalEventChannel.filter { newMemberJoinMessage.isNotEmpty() }.subscribeAlways<MemberJoinEvent> {
+            if (!group.enable()) return@subscribeAlways
             group.sendMessage(newMemberJoinMessage.random())
             if (newMemberJoinPat) {
                 getPat(member, 80)
@@ -128,11 +127,13 @@ object AutoGroup : KotlinPlugin(
         }
 
         GlobalEventChannel.filter { kickMessage.isNotEmpty() }.subscribeAlways<MemberLeaveEvent.Kick> {
+            if (!group.enable()) return@subscribeAlways
             val msg = kickMessage.encodeToMiraiCode(operatorOrBot, member).deserializeMiraiCode()
             group.sendMessage(msg)
         }
 
         GlobalEventChannel.filter { quitMessage.isNotEmpty() }.subscribeAlways<MemberLeaveEvent.Quit> {
+            if (!group.enable()) return@subscribeAlways
             val msg = quitMessage.encodeToMiraiCode(member, true).deserializeMiraiCode()
             group.sendMessage(msg)
         }
@@ -141,6 +142,7 @@ object AutoGroup : KotlinPlugin(
             .subscribeAlways<MemberMuteEvent>(
                 priority = EventPriority.LOWEST
             ) {
+                if (!group.enable()) return@subscribeAlways
                 val msg = if (operatorOrBot == group.botAsMember) botOperatedMuteMessage
                     .replace("%主动%", operatorOrBot.nameCardOrNick)
                     .encodeToMiraiCode(member, false)
@@ -155,6 +157,7 @@ object AutoGroup : KotlinPlugin(
             .subscribeAlways<MemberUnmuteEvent>(
                 priority = EventPriority.LOWEST
             ) {
+                if (!group.enable()) return@subscribeAlways
                 val msg = if (operatorOrBot == group.botAsMember) botOperatedUnmuteMessage
                     .replace("%主动%", operatorOrBot.nameCardOrNick)
                     .encodeToMiraiCode(member, false)
@@ -166,6 +169,7 @@ object AutoGroup : KotlinPlugin(
             }
 
         GlobalEventChannel.filter { botMutedMessage.isNotEmpty() }.subscribeAlways<BotMuteEvent> {
+            if (!group.enable()) return@subscribeAlways
             try {
                 for (msg in botMutedMessage) {
                     operator.sendMessage(msg)
@@ -177,16 +181,19 @@ object AutoGroup : KotlinPlugin(
         }
 
         GlobalEventChannel.filter { botUnmuteMessage.isNotEmpty() }.subscribeAlways<BotUnmuteEvent> {
+            if (!group.enable()) return@subscribeAlways
             delay(1000)
             val msg = botUnmuteMessage.encodeToMiraiCode(operator, true).deserializeMiraiCode()
             group.sendMessage(msg)
         }
 
         GlobalEventChannel.subscribeAlways<BotJoinGroupEvent.Invite> {
+            if (!group.enable()) return@subscribeAlways
             group.sendMessage("我来啦！！！")
         }
 
         GlobalEventChannel.filter { groupMuteAllRelease.isNotEmpty() }.subscribeAlways<GroupMuteAllEvent> {
+            if (!group.enable()) return@subscribeAlways
             if (!new) {
                 val msg = groupMuteAllRelease.encodeToMiraiCode(operatorOrBot, true).deserializeMiraiCode()
                 group.sendMessage(msg)
@@ -194,6 +201,7 @@ object AutoGroup : KotlinPlugin(
         }
 
         GlobalEventChannel.subscribeAlways<MemberPermissionChangeEvent> {
+            if (!group.enable()) return@subscribeAlways
             val msg = when {
                 origin.isOwner() || new.isOwner() -> PlainText("群主变了？？？")
                 origin.isAdministrator() && !new.isOperator() -> At(member).plus(PlainText(" 的管理没了，好可惜"))
@@ -203,6 +211,7 @@ object AutoGroup : KotlinPlugin(
         }
 
         GlobalEventChannel.filter { nudgedReply.isNotEmpty() }.subscribeAlways<NudgeEvent> {
+            if (subject is Group && !(subject as Group).enable()) return@subscribeAlways
             if (target == bot) {
                 when ((1..100).random()) {
                     in 1..counterNudge -> {
@@ -257,7 +266,8 @@ object AutoGroup : KotlinPlugin(
         }
 
         GlobalEventChannel.filter { repeatSec >= 0 }.subscribeAlways<GroupMessageEvent> {
-            if (onEnable.contains(group.id)) return@subscribeAlways
+            if (!group.enable())
+                if (onEnable.contains(group.id)) return@subscribeAlways
             if (lastMessage[group.id] == message.serializeToMiraiCode()) {
                 onEnable.add(group.id)
                 subject.sendMessage(message)
@@ -459,13 +469,11 @@ object AutoGroup : KotlinPlugin(
                     if (this.subject == rouGroup) {
                         if (message.content == "s" && rouletteData[subject]?.contains(sender) == false) {
                             i++
-                            delay(3000)
                             when {
                                 bullets.contains(i) -> {
                                     subject.sendMessage(rouletteOutMessage.random())
                                     try {
                                         sender.mute((1..rouletteOutMuteRange).random())
-                                        intercept()
                                     } catch (e: PermissionDeniedException) {
                                         subject.sendMessage("可惜我没法禁言呢")
                                     } catch (e: IllegalStateException) {
@@ -474,7 +482,7 @@ object AutoGroup : KotlinPlugin(
                                     }
                                     if (i >= lastBullet) {
                                         rouletteData.remove(subject)
-                                        if (bulletNum >= 1)
+                                        if (bulletNum > 1)
                                             subject.sendMessage("枪里的子弹全部射完了...本次赌局自动结束")
                                         calc.cancel()
                                         return@subscribe ListeningStatus.STOPPED
@@ -527,5 +535,16 @@ object AutoGroup : KotlinPlugin(
 
     private fun AbstractJvmPlugin.registerPermission(name: String, description: String): Permission {
         return PermissionService.INSTANCE.register(permissionId(name), description, parentPermission)
+    }
+
+    private fun init() {
+        val osName = System.getProperties().getProperty("os.name")
+        if (!osName.startsWith("Windows")) System.setProperty("java.awt.headless", "true")
+        AutoConfig.reload()
+        Zuan.register()
+        GroupList.reload()
+        AutoGroupCtr.register()
+        val cacheClear = CacheClear()
+        Timer().schedule(cacheClear, Date(), 60 * 30 * 1000)
     }
 }
