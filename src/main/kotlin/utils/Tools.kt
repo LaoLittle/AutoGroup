@@ -1,9 +1,15 @@
 package org.laolittle.plugin.joinorquit.utils
 
+import com.huaban.analysis.jieba.JiebaSegmenter
+import com.huaban.analysis.jieba.WordDictionary
 import net.mamoe.mirai.contact.AudioSupported
 import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.contact.User
+import net.mamoe.mirai.message.code.MiraiCode.deserializeMiraiCode
+import net.mamoe.mirai.message.data.Message
+import net.mamoe.mirai.message.data.MessageChain
 import net.mamoe.mirai.message.data.OfflineAudio
+import net.mamoe.mirai.message.data.toMessageChain
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import net.mamoe.mirai.utils.ExternalResource.Companion.uploadAsImage
 import org.laolittle.plugin.joinorquit.AutoConfig.yinLevel
@@ -39,21 +45,41 @@ object Tools {
         else replace("%被动%", "[mirai:at:${user.id}]")
     }
 
-    fun getYinglishNode(wordChars: CharArray, part: String?): String {
+    fun getYinglishNode(wordChars: String, part: String?): String {
         val randomOneTen = { (1..100).random() }
         var pon = ""
         if (randomOneTen() > yinLevel)
-            return String(wordChars)
+            return wordChars
         if (wordChars[0] == '！' || wordChars[0] == '!')
             return "❤"
         if (wordChars[0] == '。' || wordChars[0] == '，')
             return "…"
-        if (wordChars.size > 1 && randomOneTen() > 50)
-            return "${wordChars[0]}…${String(wordChars)}"
+        if (wordChars.length > 1 && randomOneTen() > 50)
+            return "${wordChars[0]}…$wordChars"
         else if (part == "n" && randomOneTen() > 50) {
             repeat(wordChars.count()) { pon += "〇" }
             return pon
         }
-        return "…${String(wordChars)}"
+        return "…$wordChars"
+    }
+
+    fun Message.reduplicate(): MessageChain {
+        val miraiCode = toMessageChain().serializeToMiraiCode()
+        val foo = JiebaSegmenter().process(miraiCode, JiebaSegmenter.SegMode.SEARCH)
+        val reduplicate = StringBuffer()
+        val random = { (1..10).random() }
+        foo.forEach { keyWord ->
+            val part = WordDictionary.getInstance().parts[keyWord.word]
+            val word = keyWord.word
+            val bar = if (random() > 7) {
+                if ((part == "n") && word.length == 2)
+                    if (random() > 3)
+                        "$word${word[1]}"
+                    else "${word[1]}${word[1]}"
+                else word
+            } else word
+            reduplicate.append(bar)
+        }
+        return reduplicate.toString().deserializeMiraiCode()
     }
 }

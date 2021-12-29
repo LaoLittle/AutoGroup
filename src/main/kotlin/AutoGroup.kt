@@ -18,6 +18,7 @@ import net.mamoe.mirai.event.*
 import net.mamoe.mirai.event.events.*
 import net.mamoe.mirai.message.code.MiraiCode.deserializeMiraiCode
 import net.mamoe.mirai.message.data.*
+import net.mamoe.mirai.message.nextMessage
 import net.mamoe.mirai.utils.MiraiExperimentalApi
 import net.mamoe.mirai.utils.error
 import net.mamoe.mirai.utils.info
@@ -39,6 +40,7 @@ import org.laolittle.plugin.joinorquit.AutoConfig.newMemberJoinPat
 import org.laolittle.plugin.joinorquit.AutoConfig.nudgeMin
 import org.laolittle.plugin.joinorquit.AutoConfig.nudgedReply
 import org.laolittle.plugin.joinorquit.AutoConfig.quitMessage
+import org.laolittle.plugin.joinorquit.AutoConfig.reduplicate
 import org.laolittle.plugin.joinorquit.AutoConfig.repeatSec
 import org.laolittle.plugin.joinorquit.AutoConfig.roulette
 import org.laolittle.plugin.joinorquit.AutoConfig.rouletteOutMessage
@@ -58,6 +60,7 @@ import org.laolittle.plugin.joinorquit.utils.Tools.encodeImageToMiraiCode
 import org.laolittle.plugin.joinorquit.utils.Tools.encodeToAudio
 import org.laolittle.plugin.joinorquit.utils.Tools.encodeToMiraiCode
 import org.laolittle.plugin.joinorquit.utils.Tools.getYinglishNode
+import org.laolittle.plugin.joinorquit.utils.Tools.reduplicate
 import java.io.File
 import java.time.LocalDateTime
 import java.util.*
@@ -339,6 +342,13 @@ object AutoGroup : KotlinPlugin(
                 })
             }
 
+            "叠词词" Here@{
+                val promMsg = subject.sendMessage("叠词词")
+                val next = runCatching { nextMessage(30_000) }.getOrNull() ?: return@Here
+                subject.sendMessage(next.reduplicate())
+                promMsg.recall()
+            }
+
             yinglishCommand {
                 if (onYinable.contains(sender.id)) return@yinglishCommand
                 onYinable.add(sender.id)
@@ -352,8 +362,8 @@ object AutoGroup : KotlinPlugin(
 
                             foo.forEach { keyWord ->
                                 val part = WordDictionary.getInstance().parts[keyWord.word]
-                                val chars = keyWord.word.toCharArray()
-                                yinglish.append(getYinglishNode(chars, part))
+                                val word = keyWord.word
+                                yinglish.append(getYinglishNode(word, part))
                             }
 
                             subject.sendMessage(yinglish.toString())
@@ -509,6 +519,13 @@ object AutoGroup : KotlinPlugin(
                 repeat(10) {
                     sender.nudge().sendTo(subject)
                 }
+            }
+        }
+
+        GlobalEventChannel.filter { reduplicate > 0 }.subscribeAlways<MessagePreSendEvent> {
+            val random = (1..100).random()
+            if (random < reduplicate) {
+                message = message.reduplicate()
             }
         }
 

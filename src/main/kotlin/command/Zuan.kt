@@ -28,7 +28,7 @@ object Zuan : SimpleCommand(
             return
         }
         repeat(inTimes) {
-           val zuAn = KtorHttpUtil.getZuan()
+            val zuAn = KtorHttpUtil.getZuan()
             subject?.sendMessage(At(user!!).plus(PlainText(zuAn)))
                 ?: AutoGroup.logger.info { zuAn }
         }

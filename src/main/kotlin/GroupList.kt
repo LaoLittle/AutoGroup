@@ -27,5 +27,5 @@ object GroupList : AutoSavePluginConfig("GroupList") {
     val type by value(ListType.BlackList)
 
     @ValueDescription("群聊名单")
-    val groupList by value(mutableSetOf<Long>(123456))
+    val groupList by value(mutableSetOf(123456L))
 }

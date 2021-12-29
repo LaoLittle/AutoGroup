@@ -157,6 +157,9 @@ object AutoConfig : AutoSavePluginConfig("AutoConfig") {
     @ValueDescription("祖安次数超限回复")
     val outOfLimitation: String by value("我才不会骂你那么多次啦！")
 
+    @ValueDescription("机器人说话叠词词的概率")
+    val reduplicate: Int by value(0)
+
 /*
     @ValueDescription("是否在禁言期间持续发送消息给操作人以及发送的消息")
     val keepSendMessageWhenMuted: Boolean by value(false)
