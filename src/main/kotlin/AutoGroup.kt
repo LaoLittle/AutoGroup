@@ -65,7 +65,7 @@ import java.util.*
 object AutoGroup : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.AutoGroup",
-        version = "1.9.5",
+        version = "2.0.0",
         name = "AutoGroup"
     ) {
         author("LaoLittle")
