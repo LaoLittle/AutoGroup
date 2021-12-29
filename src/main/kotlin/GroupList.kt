@@ -18,9 +18,14 @@ object GroupList : AutoSavePluginConfig("GroupList") {
         }
     }
 
-    @ValueDescription("启用白名单/黑名单")
+    @ValueDescription(
+        """
+        启用白名单/黑名单
+        请输入BlackList/WhiteList
+        """
+    )
     val type by value(ListType.BlackList)
 
     @ValueDescription("群聊名单")
-    var groupList by value(mutableSetOf<Long>(123456))
+    val groupList by value(mutableSetOf<Long>(123456))
 }
