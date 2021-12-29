@@ -17,7 +17,18 @@ object AutoGroupCtr : CompositeCommand(
             return
         }
         if (GroupList.groupList.add(target))
-            sendMessage("已加入")
-        else sendMessage("加入失败，原因: 该号码已在名单中")
+            sendMessage("已添加 $target")
+        else sendMessage("添加失败，原因: 该号码已在名单中")
+    }
+
+    @SubCommand("rm")
+    suspend fun CommandSender.remove(target: Long? = null) {
+        if (target == null) {
+            sendMessage("未输入群号")
+            return
+        }
+        if (GroupList.groupList.remove(target))
+            sendMessage("已移除 $target")
+        else sendMessage("移除失败，原因: 该号码不在名单中")
     }
 }
