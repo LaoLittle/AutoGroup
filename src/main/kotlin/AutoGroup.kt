@@ -53,14 +53,13 @@ import org.laolittle.plugin.joinorquit.AutoConfig.yinglishCommand
 import org.laolittle.plugin.joinorquit.GroupList.enable
 import org.laolittle.plugin.joinorquit.command.AutoGroupCtr
 import org.laolittle.plugin.joinorquit.command.Zuan
-import org.laolittle.plugin.joinorquit.model.CacheClear
-import org.laolittle.plugin.joinorquit.model.PatPatTool.getPat
 import org.laolittle.plugin.joinorquit.utils.NumberUtil.intConvertToChs
 import org.laolittle.plugin.joinorquit.utils.Tools.encodeImageToMiraiCode
 import org.laolittle.plugin.joinorquit.utils.Tools.encodeToAudio
 import org.laolittle.plugin.joinorquit.utils.Tools.encodeToMiraiCode
 import org.laolittle.plugin.joinorquit.utils.Tools.getYinglishNode
 import org.laolittle.plugin.joinorquit.utils.Tools.reduplicate
+import org.laolittle.plugin.model.PatPatTool.getPat
 import java.io.File
 import java.time.LocalDateTime
 import java.util.*
@@ -68,7 +67,7 @@ import java.util.*
 object AutoGroup : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.AutoGroup",
-        version = "2.0.0",
+        version = "2.0.2",
         name = "AutoGroup"
     ) {
         author("LaoLittle")
@@ -124,8 +123,12 @@ object AutoGroup : KotlinPlugin(
             if (!group.enable()) return@subscribeAlways
             group.sendMessage(newMemberJoinMessage.random())
             if (newMemberJoinPat) {
-                getPat(member, 80)
-                group.sendImage(File("$dataFolder/tmp").resolve("${member.id}_pat.gif"))
+                runCatching {
+                    getPat(member, 60)
+                    group.sendImage(File("$dataFolder").resolve("tmp").resolve("${member.id}_pat.gif"))
+                }.onFailure {
+                    if (it is ClassNotFoundException) logger.error { "需要前置插件：PatPat, 请前往下载https://mirai.mamoe.net/topic/740" }
+                }
             }
         }
 
@@ -391,7 +394,8 @@ object AutoGroup : KotlinPlugin(
                 }
                 subject.sendMessage("看看天弃之子！")
                 delay(3000)
-                subject.members.random().mute((1..100).random())
+                (subject.members - sender).filter { subject.botPermission > it.permission }.random()
+                    .mute((1..100).random())
             }
 
             roulette {
@@ -433,7 +437,6 @@ object AutoGroup : KotlinPlugin(
                         |被 "禁言子弹" 击中的群员将获得随机禁言套餐！
                     """.trimMargin()
                 )
-                var i = 0
                 var delayTimes = 0
 
                 class Roulette : TimerTask() {
@@ -475,6 +478,7 @@ object AutoGroup : KotlinPlugin(
                 while (bullets.size < bulletNum)
                     bullets.add((1..maxPlayer).random())
                 val lastBullet = Collections.max(bullets)
+                var i = 0
                 GlobalEventChannel.subscribe<GroupMessageEvent> {
                     if (this.subject == rouGroup) {
                         if (message.content == "s" && rouletteData[subject]?.contains(sender) == false) {
