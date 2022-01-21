@@ -261,7 +261,7 @@ object AutoGroup : KotlinPlugin(
                             nudgedPerReply.encodeToAudio(subject as AudioSupported).sendTo(subject)
                         } else
                             subject.sendMessage(
-                                nudgedReply.random().encodeImageToMiraiCode(subject).deserializeMiraiCode()
+                                nudgedPerReply.encodeImageToMiraiCode(subject).deserializeMiraiCode()
                             )
                     }
                 }
